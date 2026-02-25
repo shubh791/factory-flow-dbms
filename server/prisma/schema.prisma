@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Department Model
+model Department {
+  id        Int        @id @default(autoincrement())
+  name      String
+  employees Employee[]
+}
+
+// Product Model
+model Product {
+  id          Int          @id @default(autoincrement())
+  name        String
+  productions Production[]
+}
+
+// Employee Model
+model Employee {
+  id           Int        @id @default(autoincrement())
+  name         String
+  experience   Int
+  departmentId Int
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  productions Production[] // relation fix
+
+  createdAt DateTime @default(now())
+}
+
+// Production Model
+model Production {
+  id      Int @id @default(autoincrement())
+  units   Int
+  defects Int
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  employeeId Int?
+  employee   Employee? @relation(fields: [employeeId], references: [id])
+
+  date DateTime @default(now())
+}
+
+// Dataset Storage
+model Dataset {
+  id        Int      @id @default(autoincrement())
+  name      String
+  headers   Json
+  rows      Json
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
