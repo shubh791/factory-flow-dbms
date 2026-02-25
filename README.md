@@ -55,9 +55,8 @@ npm run dev
 
 ### Frontend
 cd client
-npm install
-npm run dev
-
+bun install
+bun run dev
 
 ---
 
