@@ -1,12 +1,6 @@
 /*
 =========================================================
 INDUSTRIAL DBMS - MAIN SERVER FILE
----------------------------------------------------------
-- Express server setup
-- Middleware configuration
-- Static uploads handling
-- Modular API route mounting
-- Centralized error handling
 =========================================================
 */
 
@@ -33,27 +27,20 @@ const app = express();
    GLOBAL MIDDLEWARE
 ===================================================== */
 
-// Enable Cross-Origin Requests (Frontend ↔ Backend)
 app.use(cors());
-
-// Parse JSON body
 app.use(express.json());
-
-// Parse URL-encoded form data
 app.use(express.urlencoded({ extended: true }));
 
 /* =====================================================
    STATIC FILES (UPLOADS)
 ===================================================== */
 
-// Create uploads folder if not exists
 const uploadsPath = path.join(__dirname, "uploads");
 
 if (!fs.existsSync(uploadsPath)) {
   fs.mkdirSync(uploadsPath, { recursive: true });
 }
 
-// Serve uploaded files
 app.use("/uploads", express.static(uploadsPath));
 
 /* =====================================================
@@ -66,7 +53,7 @@ import employeeRoutes from "./routes/employeeRoutes.js";
 import productionRoutes from "./routes/productionRoutes.js";
 
 import datasetRoutes from "./routes/datasetRoutes.js";
-import uploadRoutes from "./routes/uploadRoutes.js";
+
 import employeeUploadRoutes from "./routes/employeeUploadRoutes.js";
 import productionUploadRoutes from "./routes/productionUploadRoutes.js";
 
@@ -75,18 +62,16 @@ import employeeAnalyticsRoutes from "./routes/employeeAnalyticsRoutes.js";
 
 import aiRoutes from "./routes/aiRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
+import promotionRoutes from "./routes/promotionRoutes.js";
+import auditRoutes from "./routes/auditRoutes.js";
+import roleRoutes from "./routes/roleRoutes.js";
+import systemSummaryRoutes from "./routes/systemSummaryRoutes.js";
+import dataIntegrityRoutes from "./routes/dataIntegrityRoutes.js";
+import queryPerformanceRoutes from "./routes/queryPerformanceRoutes.js";
 
 /* =====================================================
    API ROUTE MOUNTING
 ===================================================== */
-
-/*
-All APIs are prefixed with /api
-Example:
-GET /api/departments
-GET /api/products
-GET /api/reports/export-report
-*/
 
 app.use("/api/departments", departmentRoutes);
 app.use("/api/products", productRoutes);
@@ -94,7 +79,6 @@ app.use("/api/employees", employeeRoutes);
 app.use("/api/production", productionRoutes);
 
 app.use("/api/datasets", datasetRoutes);
-app.use("/api/upload", uploadRoutes);
 app.use("/api/employee-upload", employeeUploadRoutes);
 app.use("/api/production-upload", productionUploadRoutes);
 
@@ -103,15 +87,19 @@ app.use("/api/employee-analytics", employeeAnalyticsRoutes);
 
 app.use("/api/ai", aiRoutes);
 
-/*
-REPORT ROUTES
-Final endpoint:
-GET http://localhost:5000/api/reports/export-report
-*/
+/* ✅ FIXED HERE */
+app.use("/api/promotions", promotionRoutes);
+
+app.use("/api/audit-logs", auditRoutes);
+app.use("/api/roles", roleRoutes);
+app.use("/api/system-summary", systemSummaryRoutes);
+app.use("/api/data-integrity", dataIntegrityRoutes);
+app.use("/api/query-performance", queryPerformanceRoutes);
+
 app.use("/api/reports", reportRoutes);
 
 /* =====================================================
-   HEALTH CHECK ROUTE
+   HEALTH CHECK
 ===================================================== */
 
 app.get("/", (req, res) => {

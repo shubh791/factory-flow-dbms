@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Production" ADD COLUMN     "cost" DOUBLE PRECISION,
+ADD COLUMN     "profit" DOUBLE PRECISION,
+ADD COLUMN     "revenue" DOUBLE PRECISION;

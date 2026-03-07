@@ -1,99 +1,123 @@
-import { LineChart } from "@mui/x-charts/LineChart";
+import BaseChart from "./BaseChart";
 
-export default function EmployeeTrendChart({ dataset }) {
-  const rows = dataset?.rows || [];
+/*
+=========================================================
+MODERN WORKFORCE PRODUCTIVITY CARD
+Fixed Version – Correct Active Employees + Defect Logic
+=========================================================
+*/
 
-  const cleanNumber = (v) => {
-    if (v === null || v === undefined) return 0;
-    const num = Number(String(v).replace(/,/g, "").trim());
-    return isNaN(num) ? 0 : num;
-  };
-
-  const numericColumns = rows.length
-    ? Object.keys(rows[0]).filter((key) =>
-        rows.slice(0, 40).some((r) => !isNaN(cleanNumber(r[key])))
-      )
-    : [];
-
-  const numericColumn = numericColumns[1] || numericColumns[0];
-
-  const labelColumn = rows.length
-    ? Object.keys(rows[0]).find((key) => key !== numericColumn)
-    : null;
-
-  const data = rows.slice(0, 60);
-
-  if (!data.length || !numericColumn) {
+export default function EmployeeTrendChart({ records }) {
+  if (!records || !records.length) {
     return (
-      <div className="bg-white rounded-3xl p-8 shadow border border-gray-100 text-gray-400">
-        Upload dataset to visualize trend
+      <div className="bg-white rounded-3xl border border-slate-200 p-8 h-[260px] flex items-center justify-center text-slate-400 text-sm shadow-sm">
+        No workforce data available.
       </div>
     );
   }
 
-  return (
-    <div className="bg-white rounded-3xl shadow border border-gray-100 p-6 sm:p-8">
+  const grouped = {};
+  const employeeSet = new Set();
 
-      {/* HEADER */}
-      <div className="mb-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
-          Workforce Trend
-        </h2>
-        <p className="text-sm text-gray-500">
-          Smooth production trend visualization
+  let totalGoodUnits = 0;
+
+  records.forEach((r) => {
+    const date = new Date(r.productionDate)
+      .toISOString()
+      .split("T")[0];
+
+    const units = Number(r.units) || 0;
+    const defects = Number(r.defects) || 0;
+
+    // 🔥 subtract defects (real productivity logic)
+    const goodUnits = units - defects;
+
+    if (!grouped[date]) grouped[date] = 0;
+    grouped[date] += goodUnits;
+
+    totalGoodUnits += goodUnits;
+
+    // 🔥 FIXED HERE (important)
+    if (r.employee?.id) {
+      employeeSet.add(r.employee.id);
+    }
+  });
+
+  const dates = Object.keys(grouped).sort(
+    (a, b) => new Date(a) - new Date(b)
+  );
+
+  const values = dates.map((d) => grouped[d]);
+
+  const totalEmployees = employeeSet.size;
+
+  const avgOutput =
+    totalEmployees > 0
+      ? Math.round(totalGoodUnits / totalEmployees)
+      : 0;
+
+  const options = {
+    tooltip: { trigger: "axis" },
+    grid: { left: 0, right: 0, top: 10, bottom: 0 },
+    xAxis: {
+      type: "category",
+      show: false,
+      data: dates,
+    },
+    yAxis: {
+      type: "value",
+      show: false,
+    },
+    series: [
+      {
+        type: "line",
+        smooth: true,
+        data: values,
+        symbol: "none",
+        lineStyle: {
+          width: 3,
+          color: "#7c3aed",
+        },
+        areaStyle: {
+          color: {
+            type: "linear",
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: "rgba(124,58,237,0.35)" },
+              { offset: 1, color: "rgba(124,58,237,0.05)" },
+            ],
+          },
+        },
+      },
+    ],
+  };
+
+  return (
+    <div className="relative rounded-3xl p-6 space-y-4 overflow-hidden shadow-md border border-purple-100 bg-gradient-to-br from-purple-50 via-white to-purple-100">
+
+      <div className="absolute -top-10 -left-10 w-40 h-40 bg-purple-300 opacity-20 rounded-full blur-3xl"></div>
+
+      <div className="relative">
+        <p className="text-xs text-purple-500 uppercase tracking-wide">
+          Workforce Productivity
+        </p>
+
+        <p className="text-3xl font-semibold text-slate-900">
+          {avgOutput.toLocaleString()}
+        </p>
+
+        <p className="text-xs text-slate-500 mt-1">
+          Active Employees: {totalEmployees}
         </p>
       </div>
 
-      {/* CHART */}
-      <LineChart
-        height={320}
-        margin={{ top: 20, bottom: 30, left: 45, right: 20 }}
-        grid={{ vertical: false, horizontal: true }}
-        series={[
-          {
-            data: data.map((r) => cleanNumber(r[numericColumn])),
-            label: numericColumn,
-            area: true,
-            showMark: false,
-            curve: "monotoneX", // THIS MAKES WAVES
-            color: "#3b82f6",
-          },
-        ]}
-        xAxis={[
-          {
-            scaleType: "point",
-            data: data.map((r, i) =>
-              r[labelColumn] || `Row ${i + 1}`
-            ),
-            tickLabelStyle: {
-              fontSize: 11,
-              fill: "#6b7280",
-            },
-          },
-        ]}
-        yAxis={[
-          {
-            tickLabelStyle: {
-              fontSize: 11,
-              fill: "#6b7280",
-            },
-          },
-        ]}
-        sx={{
-          /* Soft gradient wave fill */
-          "& .MuiAreaElement-root": {
-            fillOpacity: 0.2,
-          },
+      <div className="h-[120px] relative">
+        <BaseChart option={options} />
+      </div>
 
-          "& .MuiChartsAxis-line": {
-            stroke: "#e5e7eb",
-          },
-
-          "& .MuiChartsGrid-line": {
-            stroke: "#f1f5f9",
-          },
-        }}
-      />
     </div>
   );
 }

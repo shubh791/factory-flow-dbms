@@ -1,138 +1,187 @@
-import { BarChart } from "@mui/x-charts/BarChart";
+import BaseChart from "./BaseChart";
 
-export default function EfficiencyChart({ dataset }) {
-  const rows = dataset?.rows || [];
+/*
+=========================================================
+DEPARTMENT EFFICIENCY – Executive Intelligence Version
+=========================================================
+*/
 
-  const cleanNumber = (v) => {
-    if (v === null || v === undefined) return 0;
-    const num = Number(String(v).replace(/,/g, "").trim());
-    return isNaN(num) ? 0 : num;
+export default function EfficiencyChart({ records }) {
+  if (!records || !records.length) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 flex items-center justify-center h-[380px] text-slate-400 text-sm">
+        No production data available.
+      </div>
+    );
+  }
+
+  const departmentMap = {};
+
+  records.forEach((r) => {
+    const dept = r.employee?.department?.name;
+    if (!dept) return;
+
+    if (!departmentMap[dept]) {
+      departmentMap[dept] = { units: 0, defects: 0 };
+    }
+
+    departmentMap[dept].units += Number(r.units) || 0;
+    departmentMap[dept].defects += Number(r.defects) || 0;
+  });
+
+  const departments = Object.keys(departmentMap);
+
+  if (!departments.length) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center text-slate-400">
+        No valid department-linked production records found.
+      </div>
+    );
+  }
+
+  const efficiencies = departments.map((dept) => {
+    const { units, defects } = departmentMap[dept];
+    return units > 0
+      ? Number((((units - defects) / units) * 100).toFixed(2))
+      : 0;
+  });
+
+  const avgEfficiency =
+    efficiencies.reduce((a, b) => a + b, 0) /
+    efficiencies.length;
+
+  const bestIndex = efficiencies.indexOf(Math.max(...efficiencies));
+  const worstIndex = efficiencies.indexOf(Math.min(...efficiencies));
+
+  /* =========================
+     ENTERPRISE BAR COLORS
+  ========================= */
+
+  const barColors = efficiencies.map((val) => {
+    if (val >= 98) return "#16a34a"; // strong green
+    if (val >= 95) return "#f59e0b"; // amber
+    return "#dc2626"; // red
+  });
+
+  /* =========================
+     ECHART OPTIONS
+  ========================= */
+
+  const options = {
+    tooltip: {
+      trigger: "axis",
+      backgroundColor: "#111827",
+      borderWidth: 0,
+      textStyle: { color: "#fff" },
+      formatter: (params) => {
+        const p = params[0];
+        return `
+          <strong>${p.name}</strong><br/>
+          Efficiency: ${p.value}%
+        `;
+      },
+    },
+
+    grid: {
+      left: 140,
+      right: 40,
+      top: 50,
+      bottom: 40,
+    },
+
+    xAxis: {
+      type: "value",
+      max: 100,
+      axisLabel: { color: "#6b7280" },
+      splitLine: { lineStyle: { color: "#f1f5f9" } },
+    },
+
+    yAxis: {
+      type: "category",
+      data: departments,
+      axisLabel: {
+        color: "#374151",
+        fontWeight: 500,
+      },
+    },
+
+    series: [
+      {
+        type: "bar",
+        data: efficiencies,
+        barWidth: 18,
+        itemStyle: {
+          borderRadius: [10, 10, 10, 10],
+          color: (params) => barColors[params.dataIndex],
+        },
+        label: {
+          show: true,
+          position: "right",
+          formatter: "{c}%",
+          color: "#111827",
+          fontWeight: 600,
+        },
+        markLine: {
+          symbol: "none",
+          lineStyle: {
+            type: "dashed",
+            color: "#94a3b8",
+          },
+          label: {
+            formatter: "Target 95%",
+            color: "#64748b",
+          },
+          data: [{ xAxis: 95 }],
+        },
+      },
+    ],
   };
 
-  /* EMPTY STATE */
-  if (!rows.length) {
-    return (
-      <div className="bg-white rounded-2xl shadow border border-gray-100 p-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-2">
-          Department Efficiency
-        </h2>
-        <div className="h-[240px] sm:h-[280px] flex items-center justify-center text-gray-400 text-sm">
-          Upload dataset to visualize efficiency
-        </div>
-      </div>
-    );
-  }
-
-  /* Detect department column */
-  const departmentColumn =
-    Object.keys(rows[0]).find((key) =>
-      key.toLowerCase().includes("department")
-    ) || Object.keys(rows[0])[0];
-
-  /* Detect efficiency column */
-  const efficiencyColumn =
-    Object.keys(rows[0]).find((key) =>
-      key.toLowerCase().includes("efficiency")
-    ) ||
-    Object.keys(rows[0]).find((key) =>
-      key.toLowerCase().includes("rate")
-    );
-
-  if (!efficiencyColumn) {
-    return (
-      <div className="bg-white rounded-2xl shadow border border-gray-100 p-6">
-        <h2 className="text-lg font-semibold text-gray-800">
-          Department Efficiency
-        </h2>
-        <div className="h-[240px] sm:h-[280px] flex items-center justify-center text-gray-400 text-sm">
-          No efficiency column detected
-        </div>
-      </div>
-    );
-  }
-
-  /* GROUP DATA */
-  const grouped = {};
-
-  rows.forEach((row) => {
-    const dept = row[departmentColumn];
-    const value = cleanNumber(row[efficiencyColumn]);
-
-    if (!grouped[dept]) grouped[dept] = [];
-    grouped[dept].push(value);
-  });
-
-  const departments = Object.keys(grouped);
-
-  const averages = departments.map((dept) => {
-    const values = grouped[dept];
-    return (
-      values.reduce((sum, v) => sum + v, 0) / values.length
-    ).toFixed(2);
-  });
-
   return (
-    <div
-      className="
-        bg-white
-        rounded-2xl
-        shadow
-        border border-gray-100
-        p-4 sm:p-6
-        transition
-        hover:shadow-md
-      "
-    >
-      {/* HEADER */}
-      <div className="mb-4 sm:mb-6">
-        <h2 className="text-lg font-semibold text-gray-800">
-          Department Efficiency
+    <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm space-y-6">
+
+      <div>
+        <h2 className="text-xl font-semibold text-slate-900">
+          Department Efficiency Intelligence
         </h2>
-        <p className="text-sm text-gray-500">
-          Average efficiency by department (%)
+        <p className="text-sm text-slate-500 mt-1">
+          Real-time performance comparison powered by relational DBMS.
         </p>
       </div>
 
-      {/* CHART */}
-      <div className="overflow-x-auto">
-        <BarChart
-          height={window.innerWidth < 640 ? 260 : 320}
-          margin={{ top: 20, bottom: 40, left: 50, right: 20 }}
-          series={[
-            {
-              data: averages,
-              label: "Efficiency %",
-              color: "#10b981",
-            },
-          ]}
-          xAxis={[
-            {
-              scaleType: "band",
-              data: departments,
-              tickLabelStyle: {
-                fontSize: 11,
-                fill: "#6b7280",
-              },
-            },
-          ]}
-          yAxis={[
-            {
-              tickLabelStyle: {
-                fontSize: 11,
-                fill: "#6b7280",
-              },
-            },
-          ]}
-          grid={{ vertical: false, horizontal: true }}
-          sx={{
-            "& .MuiChartsGrid-line": {
-              stroke: "#f1f5f9",
-            },
-            "& .MuiChartsAxis-line": {
-              stroke: "#e5e7eb",
-            },
-          }}
-        />
+      <div className="h-[360px]">
+        <BaseChart option={options} />
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-6 bg-slate-50 border border-slate-200 rounded-xl p-4">
+
+        <div>
+          <p className="text-xs uppercase tracking-wide text-slate-400">
+            Average Efficiency
+          </p>
+          <p className="text-lg font-semibold text-slate-900">
+            {avgEfficiency.toFixed(2)}%
+          </p>
+        </div>
+
+        <div>
+          <p className="text-xs uppercase tracking-wide text-slate-400">
+            Best Performing Dept
+          </p>
+          <p className="text-lg font-semibold text-emerald-600">
+            {departments[bestIndex]}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-xs uppercase tracking-wide text-slate-400">
+            Lowest Performing Dept
+          </p>
+          <p className="text-lg font-semibold text-red-600">
+            {departments[worstIndex]}
+          </p>
+        </div>
+
       </div>
     </div>
   );

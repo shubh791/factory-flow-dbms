@@ -4,229 +4,412 @@ import API from "../../api/api";
 
 import SearchIcon from "@mui/icons-material/Search";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 
 import ProductionTable from "./ProductionTable";
 import EditProductionModal from "./EditProductionModal";
 import DeleteProductionModal from "./DeleteProductionModal";
 
 export default function Production() {
-  /* ================= STATE ================= */
 
-  const [units, setUnits] = useState("");
-  const [defects, setDefects] = useState("");
-  const [productId, setProductId] = useState("");
+  const [units,setUnits] = useState("");
+  const [defects,setDefects] = useState("");
+  const [productId,setProductId] = useState("");
+  const [employeeId,setEmployeeId] = useState("");
 
-  const [products, setProducts] = useState([]);
-  const [records, setRecords] = useState([]);
+  const [products,setProducts] = useState([]);
+  const [employees,setEmployees] = useState([]);
+  const [records,setRecords] = useState([]);
 
-  const [search, setSearch] = useState("");
-  const [deleteId, setDeleteId] = useState(null);
-  const [editData, setEditData] = useState(null);
+  const [search,setSearch] = useState("");
+  const [deleteId,setDeleteId] = useState(null);
+  const [editData,setEditData] = useState(null);
 
-  const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [toast, setToast] = useState("");
+  const [showClearModal,setShowClearModal] = useState(false);
+
+  const [file,setFile] = useState(null);
+  const [uploading,setUploading] = useState(false);
+
+  const [toast,setToast] = useState("");
 
   const fileRef = useRef();
 
   /* ================= LOAD DATA ================= */
 
-  useEffect(() => {
-    API.get("/products").then(res => setProducts(res.data));
-    loadRecords();
-  }, []);
+  useEffect(()=>{
 
-  const loadRecords = () => {
-    API.get("/production").then(res => setRecords(res.data));
+    API.get("/products").then(res=>setProducts(res.data));
+
+    API.get(`/employees?t=${Date.now()}`)
+    .then(res=>setEmployees(res.data));
+
+    loadRecords();
+
+  },[]);
+
+  const loadRecords = async ()=>{
+    const res = await API.get(`/production?t=${Date.now()}`);
+    setRecords(res.data);
   };
 
-  /* Toast auto hide */
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(""), 2500);
-    return () => clearTimeout(t);
-  }, [toast]);
+  /* ================= AUTO REFRESH ================= */
+
+  useEffect(()=>{
+    const interval = setInterval(()=>{
+      loadRecords();
+    },10000);
+
+    return ()=>clearInterval(interval);
+  },[]);
+
+  /* ================= TOAST ================= */
+
+  useEffect(()=>{
+    if(!toast) return;
+
+    const timer = setTimeout(()=>{
+      setToast("");
+    },2500);
+
+    return ()=>clearTimeout(timer);
+
+  },[toast]);
 
   /* ================= ADD RECORD ================= */
 
-  const addRecord = async () => {
-    if (!productId) return setToast("Select product");
-    if (units < 0 || defects < 0)
+  const addRecord = async ()=>{
+
+    if(!productId) return setToast("Select product");
+    if(!employeeId) return setToast("Select employee");
+
+    if(units < 0 || defects < 0)
       return setToast("Invalid values");
 
-    await API.post("/production", {
-      units,
-      defects,
-      productId,
-    });
+    try{
 
-    setUnits("");
-    setDefects("");
-    setProductId("");
+      await API.post("/production",{
+        units:Number(units),
+        defects:Number(defects),
+        productId:Number(productId),
+        employeeId:Number(employeeId)
+      });
 
-    loadRecords();
-    setToast("Production Added ✅");
+      setUnits("");
+      setDefects("");
+      setProductId("");
+      setEmployeeId("");
+
+      await loadRecords();
+
+      setToast("Production record added");
+
+    }catch{
+      setToast("Failed to add record");
+    }
+
   };
 
   /* ================= UPDATE ================= */
 
-  const updateRecord = async () => {
-    await API.patch(`/production/${editData.id}`, editData);
-    setEditData(null);
-    loadRecords();
-    setToast("Record Updated ✏️");
+  const updateRecord = async ()=>{
+
+    try{
+
+      await API.patch(`/production/${editData.id}`,editData);
+
+      setEditData(null);
+
+      await loadRecords();
+
+      setToast("Record updated");
+
+    }catch{
+      setToast("Update failed");
+    }
+
   };
 
-  /* ================= DELETE ================= */
+  /* ================= DELETE ONE ================= */
 
-  const deleteRecord = async () => {
-    await API.delete(`/production/${deleteId}`);
-    setDeleteId(null);
-    loadRecords();
+  const deleteRecord = async ()=>{
+
+    try{
+
+      await API.delete(`/production/${deleteId}`);
+
+      setDeleteId(null);
+
+      await loadRecords();
+
+      setToast("Record deleted");
+
+    }catch{
+      setToast("Delete failed");
+    }
+
+  };
+
+  /* ================= DELETE ALL ================= */
+
+  const clearAllRecords = async ()=>{
+
+    try{
+
+      const res = await API.delete("/production/clear");
+
+      setShowClearModal(false);
+
+      await loadRecords();
+
+      setToast(`${res.data.deletedCount || 0} records removed`);
+
+    }catch{
+      setToast("Bulk delete failed");
+    }
+
   };
 
   /* ================= CSV UPLOAD ================= */
 
-  const uploadCSV = async () => {
-    if (!file) return setToast("Select CSV first");
+  const uploadCSV = async ()=>{
 
-    const formData = new FormData();
-    formData.append("file", file);
+    if(!file){
+      setToast("Select CSV first");
+      return;
+    }
 
-    setUploading(true);
-    await API.post("/upload-production-csv", formData);
+    try{
 
-    setUploading(false);
-    setFile(null);
-    fileRef.current.value = "";
+      const formData = new FormData();
+      formData.append("file",file);
 
-    loadRecords();
-    setToast("CSV Uploaded 🚀");
+      setUploading(true);
+
+      await API.post(
+        "/production-upload/upload-production-csv",
+        formData,
+        {headers:{ "Content-Type":"multipart/form-data"}}
+      );
+
+      setUploading(false);
+
+      setFile(null);
+
+      if(fileRef.current) fileRef.current.value="";
+
+      await loadRecords();
+
+      setToast("CSV uploaded successfully");
+
+    }catch{
+
+      setUploading(false);
+
+      setToast("Upload failed");
+
+    }
+
   };
 
-  /* ================= FAST FILTER ================= */
+  /* ================= FILTER ================= */
 
-  const filtered = useMemo(() => {
+  const filtered = useMemo(()=>{
     return records.filter(r =>
-      r.product?.name?.toLowerCase().includes(search.toLowerCase())
+      r.product?.name
+      ?.toLowerCase()
+      .includes(search.toLowerCase())
     );
-  }, [records, search]);
+  },[records,search]);
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="p-4 md:p-8 lg:p-10 max-w-7xl mx-auto space-y-8"
-    >
-      <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
-        Production Management
-      </h2>
+  return(
 
-      {/* ADD FORM */}
-      <motion.div
-        whileHover={{ scale: 1.01 }}
-        className="bg-white rounded-2xl shadow border p-6"
-      >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <input
-            type="number"
-            placeholder="Units"
-            value={units}
-            onChange={e => setUnits(e.target.value)}
-            className="border rounded-xl p-3"
-          />
+<motion.div
+initial={{opacity:0}}
+animate={{opacity:1}}
+className="p-6 md:p-10 max-w-7xl mx-auto space-y-10 bg-slate-50 min-h-screen"
+>
 
-          <input
-            type="number"
-            placeholder="Defects"
-            value={defects}
-            onChange={e => setDefects(e.target.value)}
-            className="border rounded-xl p-3"
-          />
+<h2 className="text-3xl font-semibold text-slate-900">
+Production Data Management
+</h2>
 
-          <select
-            value={productId}
-            onChange={e => setProductId(e.target.value)}
-            className="border rounded-xl p-3"
-          >
-            <option value="">Product</option>
-            {products.map(p => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+{/* ================= ADD FORM ================= */}
 
-          <button
-            onClick={addRecord}
-            className="bg-green-600 text-white rounded-xl py-3"
-          >
-            Add Record
-          </button>
-        </div>
-      </motion.div>
+<div className="bg-white rounded-2xl border border-slate-200 p-6">
 
-      {/* SEARCH + CSV */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex items-center bg-white border rounded-xl px-4 flex-1 shadow-sm">
-          <SearchIcon className="text-gray-400 mr-2" />
-          <input
-            placeholder="Search product..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="py-3 w-full outline-none"
-          />
-        </div>
+<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
 
-        <div className="flex items-center gap-3">
-          <input
-            type="file"
-            ref={fileRef}
-            accept=".csv"
-            onChange={e => setFile(e.target.files[0])}
-          />
+<input
+type="number"
+min="0"
+placeholder="Units Produced"
+value={units}
+onChange={e=>setUnits(e.target.value)}
+className="border rounded-lg p-3"
+/>
 
-          <button
-            onClick={uploadCSV}
-            className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg"
-          >
-            {uploading && (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            )}
-            <CloudUploadIcon fontSize="small" />
-            Upload
-          </button>
-        </div>
-      </div>
+<input
+type="number"
+min="0"
+placeholder="Defective Units"
+value={defects}
+onChange={e=>setDefects(e.target.value)}
+className="border rounded-lg p-3"
+/>
 
-      {/* TABLE */}
-      <ProductionTable
-        records={filtered}
-        onEdit={setEditData}
-        onDelete={setDeleteId}
-      />
+<select
+value={productId}
+onChange={e=>setProductId(e.target.value)}
+className="border rounded-lg p-3"
+>
+<option value="">Select Product</option>
+{products.map(p=>(
+<option key={p.id} value={p.id}>
+{p.name}
+</option>
+))}
+</select>
 
-      {/* MODALS */}
-      <EditProductionModal
-        editData={editData}
-        setEditData={setEditData}
-        products={products}
-        onUpdate={updateRecord}
-        onClose={() => setEditData(null)}
-      />
+<select
+value={employeeId}
+onChange={e=>setEmployeeId(e.target.value)}
+className="border rounded-lg p-3"
+>
+<option value="">Select Employee</option>
+{employees.map(emp=>(
+<option key={emp.id} value={emp.id}>
+{emp.name} ({emp.department?.name})
+</option>
+))}
+</select>
 
-      <DeleteProductionModal
-        deleteId={deleteId}
-        onDelete={deleteRecord}
-        onClose={() => setDeleteId(null)}
-      />
+<button
+onClick={addRecord}
+className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg py-3"
+>
+Save Record
+</button>
 
-      {/* TOAST */}
-      {toast && (
-        <div className="fixed bottom-6 right-6 bg-black text-white px-5 py-3 rounded-lg shadow-lg">
-          {toast}
-        </div>
-      )}
-    </motion.div>
-  );
+</div>
+
+</div>
+
+{/* ================= SEARCH + CSV ================= */}
+
+<div className="flex flex-col md:flex-row gap-4 items-center">
+
+<div className="flex items-center bg-white border rounded-lg px-4 flex-1">
+<SearchIcon className="text-slate-400 mr-2"/>
+<input
+placeholder="Search by product..."
+value={search}
+onChange={(e)=>setSearch(e.target.value)}
+className="py-3 w-full outline-none"
+/>
+</div>
+
+<div className="flex items-center gap-3">
+
+<input
+type="file"
+ref={fileRef}
+accept=".csv"
+onChange={(e)=>setFile(e.target.files[0])}
+/>
+
+<button
+onClick={uploadCSV}
+disabled={uploading}
+className="flex items-center gap-2 bg-slate-800 text-white px-5 py-2 rounded-lg"
+>
+{uploading ?
+<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+:
+<CloudUploadIcon fontSize="small"/>
+}
+Upload CSV
+</button>
+
+<button
+onClick={()=>setShowClearModal(true)}
+className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg"
+>
+<DeleteForeverIcon fontSize="small"/>
+Delete All
+</button>
+
+</div>
+
+</div>
+
+<ProductionTable
+records={filtered}
+onEdit={setEditData}
+onDelete={setDeleteId}
+/>
+
+<EditProductionModal
+editData={editData}
+setEditData={setEditData}
+products={products}
+employees={employees}
+onUpdate={updateRecord}
+onClose={()=>setEditData(null)}
+/>
+
+<DeleteProductionModal
+deleteId={deleteId}
+onDelete={deleteRecord}
+onClose={()=>setDeleteId(null)}
+/>
+
+{/* DELETE ALL MODAL */}
+
+{showClearModal && (
+<div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+<div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+
+<h3 className="text-lg font-semibold mb-4">
+Confirm Bulk Deletion
+</h3>
+
+<p className="text-sm text-slate-600 mb-6">
+Are you sure you want to delete all production records?
+This action cannot be undone.
+</p>
+
+<div className="flex justify-end gap-3">
+
+<button
+onClick={()=>setShowClearModal(false)}
+className="px-4 py-2 border rounded-lg"
+>
+Cancel
+</button>
+
+<button
+onClick={clearAllRecords}
+className="px-4 py-2 bg-red-600 text-white rounded-lg"
+>
+Delete All
+</button>
+
+</div>
+
+</div>
+
+</div>
+)}
+
+{toast && (
+<div className="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3 rounded-lg shadow-lg text-sm">
+{toast}
+</div>
+)}
+
+</motion.div>
+
+);
+
 }

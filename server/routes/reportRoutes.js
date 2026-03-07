@@ -1,9 +1,8 @@
 import express from "express";
-import { generateReport } from "../controllers/reportController.js";
+import { exportReport } from "../controllers/reportController.js";
 
 const router = express.Router();
 
-/* PDF Export Route */
-router.get("/export-report", generateReport);
+router.get("/export-report", exportReport);
 
 export default router;

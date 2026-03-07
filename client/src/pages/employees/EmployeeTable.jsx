@@ -5,11 +5,13 @@ import DeleteIcon from "@mui/icons-material/Delete";
 const EmployeeTable = React.memo(({ employees, onEdit, onDelete }) => {
   return (
     <div className="bg-white rounded-2xl shadow border overflow-x-auto">
-      <table className="w-full text-left min-w-[650px]">
+      <table className="w-full text-left min-w-[850px]">
         <thead className="bg-gray-50 border-b text-gray-600">
           <tr>
             <th className="p-4">#</th>
+            <th>Employee Code</th>
             <th>Name</th>
+            <th>Role</th>
             <th>Department</th>
             <th>Experience</th>
             <th>Action</th>
@@ -20,8 +22,17 @@ const EmployeeTable = React.memo(({ employees, onEdit, onDelete }) => {
           {employees.map((emp, i) => (
             <tr key={emp.id} className="border-b hover:bg-gray-50">
               <td className="p-4">{i + 1}</td>
+
+              <td className="font-medium text-slate-700">
+                {emp.employeeCode}
+              </td>
+
               <td>{emp.name}</td>
+
+              <td>{emp.role?.title}</td>
+
               <td>{emp.department?.name}</td>
+
               <td>{emp.experience} yrs</td>
 
               <td className="flex gap-4 py-4">

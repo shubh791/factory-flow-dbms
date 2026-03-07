@@ -7,38 +7,152 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Department Model
+//////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////
+
+enum EmploymentStatus {
+  ACTIVE
+  ON_LEAVE
+  RESIGNED
+  TERMINATED
+}
+
+enum ProductionShift {
+  MORNING
+  EVENING
+  NIGHT
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  PROMOTION
+}
+
+//////////////////////////////////////////////////////
+// DEPARTMENT
+//////////////////////////////////////////////////////
+
 model Department {
-  id        Int        @id @default(autoincrement())
-  name      String
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  code        String  @unique
+  description String?
+
   employees Employee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
 }
 
-// Product Model
-model Product {
-  id          Int          @id @default(autoincrement())
-  name        String
-  productions Production[]
-}
+//////////////////////////////////////////////////////
+// ROLE (Designation / Hierarchy)
+//////////////////////////////////////////////////////
 
-// Employee Model
-model Employee {
-  id           Int        @id @default(autoincrement())
-  name         String
-  experience   Int
-  departmentId Int
-  department   Department @relation(fields: [departmentId], references: [id])
+model Role {
+  id          Int     @id @default(autoincrement())
+  title       String  @unique
+  level       Int // 1 = Top Management
+  description String?
 
-  productions Production[] // relation fix
+  employees Employee[]
+
+  // Opposite relations for promotion history
+  oldPromotions PromotionHistory[] @relation("OldRole")
+  newPromotions PromotionHistory[] @relation("NewRole")
 
   createdAt DateTime @default(now())
 }
 
-// Production Model
+//////////////////////////////////////////////////////
+// EMPLOYEE
+//////////////////////////////////////////////////////
+
+model Employee {
+  id           Int     @id @default(autoincrement())
+  employeeCode String  @unique
+  name         String
+  email        String? @unique
+  phone        String?
+  experience   Int     @default(0)
+
+  status EmploymentStatus @default(ACTIVE)
+
+  departmentId Int
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  roleId Int
+  role   Role @relation(fields: [roleId], references: [id])
+
+  productions Production[]
+  promotions  PromotionHistory[]
+
+  isDeleted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([departmentId])
+  @@index([roleId])
+}
+
+//////////////////////////////////////////////////////
+// PROMOTION HISTORY
+//////////////////////////////////////////////////////
+
+model PromotionHistory {
+  id Int @id @default(autoincrement())
+
+  employeeId Int
+employee   Employee @relation(fields: [employeeId], references: [id])
+
+  oldRoleId Int
+  newRoleId Int
+
+  oldRole Role @relation("OldRole", fields: [oldRoleId], references: [id])
+  newRole Role @relation("NewRole", fields: [newRoleId], references: [id])
+
+  remarks    String?
+  promotedAt DateTime @default(now())
+
+  @@index([employeeId])
+  @@index([oldRoleId])
+  @@index([newRoleId])
+}
+
+//////////////////////////////////////////////////////
+// PRODUCT
+//////////////////////////////////////////////////////
+
+model Product {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  sku         String? @unique
+  description String?
+
+  unitPrice   Float   @default(0)
+  unitCost    Float   @default(0)
+
+  productions Production[]
+
+  createdAt DateTime @default(now())
+}
+
+//////////////////////////////////////////////////////
+// PRODUCTION
+//////////////////////////////////////////////////////
+
 model Production {
-  id      Int @id @default(autoincrement())
+  id Int @id @default(autoincrement())
+
   units   Int
   defects Int
+
+  shift ProductionShift @default(MORNING)
 
   productId Int
   product   Product @relation(fields: [productId], references: [id])
@@ -46,10 +160,37 @@ model Production {
   employeeId Int?
   employee   Employee? @relation(fields: [employeeId], references: [id])
 
-  date DateTime @default(now())
+  productionDate DateTime @default(now())
+
+  // Financial analytics fields
+  revenue Float?
+  cost    Float?
+  profit  Float?
+
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([employeeId])
+  @@index([productionDate])
+}
+//////////////////////////////////////////////////////
+// AUDIT LOG (Enterprise Feature)
+//////////////////////////////////////////////////////
+
+model AuditLog {
+  id          Int         @id @default(autoincrement())
+  action      AuditAction
+  entity      String
+  entityId    Int
+  performedBy String?
+  timestamp   DateTime    @default(now())
+  metadata    Json?
 }
 
-// Dataset Storage
+//////////////////////////////////////////////////////
+// DATASET STORAGE (For Analytics Upload)
+//////////////////////////////////////////////////////
+
 model Dataset {
   id        Int      @id @default(autoincrement())
   name      String

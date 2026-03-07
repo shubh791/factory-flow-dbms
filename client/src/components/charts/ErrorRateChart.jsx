@@ -1,133 +1,175 @@
-import { PieChart } from "@mui/x-charts/PieChart";
+import BaseChart from "./BaseChart";
 
-export default function ErrorRateChart({ dataset }) {
-  const rows = dataset?.rows || [];
+/*
+=========================================================
+QUALITY INDEX – Executive Industrial Version
+Centralized DBMS Quality Monitoring
+=========================================================
+*/
 
-  const cleanNumber = (v) => {
-    if (v === null || v === undefined) return 0;
-    const num = Number(String(v).replace(/,/g, "").trim());
-    return isNaN(num) ? 0 : num;
-  };
-
-  if (!rows.length) {
+export default function ErrorRateChart({ records }) {
+  if (!records || !records.length) {
     return (
-      <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
-        <h2 className="text-lg font-semibold text-gray-800 mb-2">
-          Defect Ratio
-        </h2>
-        <div className="h-[240px] sm:h-[320px] flex items-center justify-center text-gray-400 text-sm">
-          Upload dataset to visualize chart
-        </div>
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 flex items-center justify-center h-[380px] text-slate-400 text-sm">
+        No production data available.
       </div>
     );
   }
 
-  /* Detect columns */
-  const totalColumn =
-    Object.keys(rows[0]).find(k =>
-      k.toLowerCase().includes("unit")
-    );
+  const totalUnits = records.reduce(
+    (sum, r) => sum + (Number(r.units) || 0),
+    0
+  );
 
-  const defectColumn =
-    Object.keys(rows[0]).find(k =>
-      k.toLowerCase().includes("defect")
-    );
+  const totalDefects = records.reduce(
+    (sum, r) => sum + (Number(r.defects) || 0),
+    0
+  );
 
-  const goodColumn =
-    Object.keys(rows[0]).find(k =>
-      k.toLowerCase().includes("good")
-    );
+  const goodUnits = Math.max(totalUnits - totalDefects, 0);
 
-  let totalUnits = 0;
-  let defects = 0;
-  let goodUnits = 0;
+  const defectRate =
+    totalUnits > 0
+      ? ((totalDefects / totalUnits) * 100).toFixed(2)
+      : 0;
 
-  rows.forEach(row => {
-    totalUnits += cleanNumber(row[totalColumn]);
-    defects += cleanNumber(row[defectColumn]);
+  const qualityIndex = (100 - defectRate).toFixed(2);
 
-    if (goodColumn) {
-      goodUnits += cleanNumber(row[goodColumn]);
-    }
-  });
+  /* =========================
+     ENTERPRISE DONUT OPTIONS
+  ========================= */
 
-  if (!goodColumn) {
-    goodUnits = Math.max(totalUnits - defects, 0);
-  }
+  const options = {
+    tooltip: {
+      trigger: "item",
+      backgroundColor: "#111827",
+      borderWidth: 0,
+      textStyle: { color: "#fff" },
+      formatter: (params) => {
+        return `
+          <strong>${params.name}</strong><br/>
+          Value: ${params.value.toLocaleString()}<br/>
+          Ratio: ${params.percent}%
+        `;
+      },
+    },
 
-  const hasData = goodUnits > 0 || defects > 0;
+    legend: {
+      bottom: 0,
+      textStyle: { color: "#6b7280" },
+    },
 
-  /* Responsive chart size */
-  const chartHeight =
-    typeof window !== "undefined" && window.innerWidth < 640
-      ? 260
-      : 320;
-
-  const innerRadius =
-    typeof window !== "undefined" && window.innerWidth < 640
-      ? 60
-      : 80;
-
-  const outerRadius =
-    typeof window !== "undefined" && window.innerWidth < 640
-      ? 90
-      : 120;
+    series: [
+      {
+        name: "Quality Distribution",
+        type: "pie",
+        radius: ["55%", "75%"],
+        center: ["50%", "45%"],
+        avoidLabelOverlap: true,
+        itemStyle: {
+          borderRadius: 10,
+        },
+        label: {
+          show: false,
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: 16,
+            fontWeight: 600,
+          },
+        },
+        data: [
+          {
+            value: goodUnits,
+            name: "Good Units",
+            itemStyle: {
+              color: {
+                type: "linear",
+                x: 0,
+                y: 0,
+                x2: 1,
+                y2: 1,
+                colorStops: [
+                  { offset: 0, color: "#16a34a" },
+                  { offset: 1, color: "#4ade80" },
+                ],
+              },
+            },
+          },
+          {
+            value: totalDefects,
+            name: "Defective Units",
+            itemStyle: {
+              color: {
+                type: "linear",
+                x: 0,
+                y: 0,
+                x2: 1,
+                y2: 1,
+                colorStops: [
+                  { offset: 0, color: "#dc2626" },
+                  { offset: 1, color: "#f87171" },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    ],
+  };
 
   return (
-    <div className="
-      bg-white
-      rounded-3xl
-      shadow-lg
-      border border-gray-100
-      p-4 sm:p-6 lg:p-8
-      hover:shadow-xl
-      transition
-    ">
+    <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm space-y-6">
 
-      <div className="mb-4 sm:mb-6">
-        <h2 className="text-lg font-semibold text-gray-800">
-          Defect Ratio
+      {/* HEADER */}
+      <div>
+        <h2 className="text-xl font-semibold text-slate-900">
+          Quality Index & Defect Ratio
         </h2>
-        <p className="text-sm text-gray-500">
-          Production quality distribution
+        <p className="text-sm text-slate-500 mt-1">
+          Enterprise-grade quality monitoring powered by relational DBMS.
         </p>
       </div>
 
-      {!hasData ? (
-        <div className="h-[240px] sm:h-[320px] flex items-center justify-center text-gray-400 text-sm">
-          No valid data detected
+      {/* QUALITY METRIC STRIP */}
+      <div className="grid grid-cols-2 gap-6 bg-slate-50 border border-slate-200 rounded-xl p-4">
+
+        <div>
+          <p className="text-xs uppercase tracking-wide text-slate-400">
+            Defect Rate
+          </p>
+          <p className="text-lg font-semibold text-red-600">
+            {defectRate}%
+          </p>
         </div>
-      ) : (
-        <div className="overflow-x-auto">
-<div className="w-full h-[260px] sm:h-[300px] md:h-[320px] flex items-center justify-center">
-  <PieChart
-    height={260}
-    series={[
-      {
-        data: [
-          {
-            id: 0,
-            value: goodUnits,
-            label: "Good Units",
-            color: "#3b82f6",
-          },
-          {
-            id: 1,
-            value: defects,
-            label: "Defects",
-            color: "#f59e0b",
-          },
-        ],
-        innerRadius: 50,
-        outerRadius: 90,
-        paddingAngle: 3,
-        cornerRadius: 5,
-      },
-    ]}
-  />
-</div>
+
+        <div>
+          <p className="text-xs uppercase tracking-wide text-slate-400">
+            Quality Index
+          </p>
+          <p className="text-lg font-semibold text-emerald-600">
+            {qualityIndex}%
+          </p>
         </div>
-      )}
+
+      </div>
+
+      {/* DONUT CHART */}
+      <div className="relative h-[380px] flex items-center justify-center">
+        <BaseChart option={options} />
+
+        {/* CENTER OVERLAY */}
+        <div className="absolute text-center">
+          <p className="text-sm text-slate-500 uppercase tracking-wide">
+            Quality Index
+          </p>
+          <p className="text-3xl font-bold text-slate-900">
+            {qualityIndex}%
+          </p>
+        </div>
+      </div>
+
     </div>
   );
 }

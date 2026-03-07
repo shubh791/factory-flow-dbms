@@ -1,78 +1,66 @@
 import { useEffect, useState } from "react";
 import API from "../api/api";
 import { motion } from "framer-motion";
-
-import { LineChart } from "@mui/x-charts/LineChart";
-import { BarChart } from "@mui/x-charts/BarChart";
-import { PieChart } from "@mui/x-charts/PieChart";
+import ReactECharts from "echarts-for-react";
 
 /*
 ==================================================
-OPERATIONS ANALYTICS PAGE
-- Uses same dataset as dashboard
-- Fully responsive SaaS UI
-- Animated KPI cards
-- Clean charts
-- Central API usage
+OPERATIONS PERFORMANCE ANALYSIS – DB VERSION
+Fully aligned with production table
 ==================================================
 */
 
 export default function OperationsAnalytics() {
-  const [dataset, setDataset] = useState(null);
+  const [records, setRecords] = useState([]);
 
-  /* ================= LOAD DATASET ================= */
   useEffect(() => {
-    API.get("/datasets/latest").then(res => {
-      if (!res.data) return;
-
-      setDataset({
-        ...res.data,
-        rows: res.data.rows || [],
-      });
-    });
+    API.get("/production")
+      .then(res => setRecords(res.data || []))
+      .catch(console.error);
   }, []);
 
-  if (!dataset?.rows?.length)
+  if (!records.length) {
     return (
-      <div className="p-10 text-gray-500">
-        No dataset uploaded.
+      <div className="p-8 text-gray-500">
+        No production records available.
       </div>
     );
+  }
 
-  const rows = dataset.rows;
+  /* ================= AGGREGATE BY DATE ================= */
 
-  /* ================= COLUMN DETECTION ================= */
+  const dateMap = {};
 
-  const cleanNumber = val => {
-    const num = Number(String(val).replace(/,/g, ""));
-    return isNaN(num) ? 0 : num;
-  };
+  records.forEach((r) => {
+    const date = new Date(r.productionDate);
+    if (isNaN(date)) return;
 
-  const numericColumns = Object.keys(rows[0]).filter(key =>
-    rows.slice(0, 40).some(r => !isNaN(cleanNumber(r[key])))
-  );
+    const key = date.toISOString().split("T")[0];
 
-  const unitColumn =
-    numericColumns.find(c => c.toLowerCase().includes("unit")) ||
-    numericColumns[0];
+    if (!dateMap[key]) {
+      dateMap[key] = { units: 0, defects: 0 };
+    }
 
-  const defectColumn =
-    numericColumns.find(c => c.toLowerCase().includes("defect")) ||
-    numericColumns[1];
-
-  const labelColumn = Object.keys(rows[0]).find(
-    k => k !== unitColumn && k !== defectColumn
-  );
-
-  /* ================= KPI CALCULATIONS ================= */
-
-  let totalUnits = 0;
-  let totalDefects = 0;
-
-  rows.forEach(r => {
-    totalUnits += cleanNumber(r[unitColumn]);
-    totalDefects += cleanNumber(r[defectColumn]);
+    dateMap[key].units += Number(r.units) || 0;
+    dateMap[key].defects += Number(r.defects) || 0;
   });
+
+  const sortedDates = Object.keys(dateMap).sort(
+    (a, b) => new Date(a) - new Date(b)
+  );
+
+  const unitsTrend = sortedDates.map(
+    (d) => dateMap[d].units
+  );
+
+  const defectTrend = sortedDates.map(
+    (d) => dateMap[d].defects
+  );
+
+  /* ================= CORE METRICS ================= */
+
+  const totalUnits = unitsTrend.reduce((a, b) => a + b, 0);
+  const totalDefects = defectTrend.reduce((a, b) => a + b, 0);
 
   const efficiency =
     totalUnits > 0
@@ -84,119 +72,145 @@ export default function OperationsAnalytics() {
       ? (totalDefects / totalUnits) * 100
       : 0;
 
-  /* ================= PRODUCT GROUPING ================= */
+  /* ================= STABILITY INDEX ================= */
 
-  const productMap = {};
+  const mean =
+    unitsTrend.reduce((a, b) => a + b, 0) /
+    unitsTrend.length;
 
-  rows.forEach(r => {
-    const name = r[labelColumn] || "Unknown";
+  const variance =
+    unitsTrend.reduce(
+      (sum, val) =>
+        sum + Math.pow(val - mean, 2),
+      0
+    ) / unitsTrend.length;
 
-    if (!productMap[name]) {
-      productMap[name] = { units: 0, defects: 0 };
-    }
+  const stdDev = Math.sqrt(variance);
 
-    productMap[name].units += cleanNumber(r[unitColumn]);
-    productMap[name].defects += cleanNumber(r[defectColumn]);
-  });
+  const stabilityIndex =
+    mean > 0
+      ? Math.max(
+          0,
+          100 - (stdDev / mean) * 100
+        )
+      : 0;
 
-  const productNames = Object.keys(productMap);
-  const productUnits = productNames.map(p => productMap[p].units);
-  const productDefects = productNames.map(p => productMap[p].defects);
+  /* ================= TREND CHART ================= */
+
+  const trendOption = {
+    tooltip: { trigger: "axis" },
+    grid: { left: 40, right: 20, top: 20, bottom: 40 },
+    xAxis: {
+      type: "category",
+      data: sortedDates,
+      axisLine: { lineStyle: { color: "#94a3b8" } },
+      axisLabel: { color: "#64748b" },
+    },
+    yAxis: {
+      type: "value",
+      axisLine: { lineStyle: { color: "#94a3b8" } },
+      splitLine: { lineStyle: { color: "#e5e7eb" } },
+    },
+    series: [
+      {
+        name: "Production Units",
+        type: "line",
+        smooth: true,
+        data: unitsTrend,
+        lineStyle: { width: 3, color: "#10b981" },
+        areaStyle: {
+          opacity: 0.15,
+          color: "#10b981",
+        },
+      },
+      {
+        name: "Defects",
+        type: "line",
+        smooth: true,
+        data: defectTrend,
+        lineStyle: { width: 2, color: "#ef4444" },
+      },
+    ],
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="p-4 md:p-8 lg:p-10 max-w-7xl mx-auto space-y-10"
-    >
-      {/* ================= PAGE TITLE ================= */}
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-        Operations Analytics
-      </h1>
+    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-12 bg-slate-50 min-h-screen">
 
-      {/* ================= KPI CARDS ================= */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPI title="Total Production" value={totalUnits.toLocaleString()} />
-        <KPI title="Total Defects" value={totalDefects.toLocaleString()} />
-        <KPI title="Efficiency" value={`${efficiency.toFixed(2)}%`} />
-        <KPI title="Defect Rate" value={`${defectRate.toFixed(2)}%`} />
+      {/* ================= HEADER ================= */}
+      <div>
+        <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">
+          Operations Performance Analysis
+        </h1>
+        <p className="text-gray-500 mt-2 text-sm">
+          Performance metrics derived directly from relational DBMS records.
+        </p>
       </div>
 
-      {/* ================= CHARTS GRID ================= */}
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* BAR CHART */}
-        <ChartCard title="Product Output">
-          <BarChart
-            height={300}
-            series={[{ data: productUnits, label: "Units" }]}
-            xAxis={[{ scaleType: "band", data: productNames }]}
-          />
-        </ChartCard>
+      {/* ================= KPI SECTION ================= */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
-        {/* PIE CHART */}
-        <ChartCard title="Defect Distribution">
-          <PieChart
-            height={300}
-            series={[
-              {
-                data: productNames.map((name, i) => ({
-                  id: i,
-                  value: productDefects[i],
-                  label: name,
-                })),
-                innerRadius: 70,
-              },
-            ]}
-          />
-        </ChartCard>
-      </div>
-
-      {/* ================= LINE TREND ================= */}
-      <ChartCard title="Production Trend">
-        <LineChart
-          height={320}
-          series={[
-            {
-              data: productUnits,
-              label: "Units",
-              area: true,
-              showMark: false,
-            },
-          ]}
-          xAxis={[{ scaleType: "point", data: productNames }]}
+        <MetricCard
+          title="Overall Efficiency"
+          value={`${efficiency.toFixed(2)}%`}
         />
-      </ChartCard>
-    </motion.div>
+
+        <MetricCard
+          title="Defect Rate"
+          value={`${defectRate.toFixed(2)}%`}
+        />
+
+        <MetricCard
+          title="Production Stability Index"
+          value={`${stabilityIndex.toFixed(2)}%`}
+        />
+
+      </div>
+
+      {/* ================= TREND ================= */}
+      <div className="bg-white rounded-2xl shadow border p-6">
+        <h3 className="font-semibold text-gray-800 mb-4">
+          Production Trend (Time-Series DB Analysis)
+        </h3>
+
+        <ReactECharts
+          option={trendOption}
+          style={{ height: 320 }}
+        />
+      </div>
+
+      {/* ================= DBMS IMPACT SECTION ================= */}
+      <div className="bg-white rounded-2xl border p-6">
+        <h3 className="font-semibold text-gray-800 mb-3">
+          Impact of DBMS on Organisational Performance
+        </h3>
+
+        <ul className="text-sm text-gray-600 space-y-2 list-disc pl-5">
+          <li>Centralized relational storage ensures accurate aggregation.</li>
+          <li>Time-series data enables automated trend computation.</li>
+          <li>Referential integrity maintains production-data consistency.</li>
+          <li>Query-driven metrics eliminate manual spreadsheet analysis.</li>
+          <li>Historical tracking improves operational planning.</li>
+        </ul>
+      </div>
+
+    </div>
   );
 }
 
-/* ==================================================
-   KPI CARD COMPONENT
-================================================== */
-function KPI({ title, value }) {
+/* ================= CARD ================= */
+
+function MetricCard({ title, value }) {
   return (
     <motion.div
-      whileHover={{ scale: 1.03 }}
+      whileHover={{ y: -4 }}
       className="bg-white rounded-2xl shadow border p-6"
     >
-      <p className="text-gray-500 text-sm">{title}</p>
-      <h2 className="text-2xl font-bold text-gray-800 mt-2">
+      <p className="text-sm text-gray-500">
+        {title}
+      </p>
+      <h2 className="text-2xl font-semibold text-gray-800 mt-2">
         {value}
       </h2>
     </motion.div>
-  );
-}
-
-/* ==================================================
-   CHART CARD WRAPPER
-================================================== */
-function ChartCard({ title, children }) {
-  return (
-    <div className="bg-white rounded-2xl shadow border p-6">
-      <h3 className="font-semibold mb-4 text-gray-800">
-        {title}
-      </h3>
-      {children}
-    </div>
   );
 }
