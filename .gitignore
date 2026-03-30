@@ -8,14 +8,20 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+#old folders 
+server_old
+client_old
+
 # Environment variables
 .env
+.env.local
 server/.env
 client/.env
 
 # Build folders
 dist/
 build/
+.next/
 
 # OS files
 .DS_Store
