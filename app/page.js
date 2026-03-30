@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import KPIStats from '@/components/charts/KPIStats';
 import ProductionChart from '@/components/charts/ProductionChart';
@@ -17,7 +17,8 @@ import SpeedIcon       from '@mui/icons-material/Speed';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import SecurityIcon    from '@mui/icons-material/Security';
 
-import { FaCircle, FaChartLine, FaDatabase, FaArrowRight } from 'react-icons/fa';
+import { FaCircle, FaChartLine, FaDatabase, FaArrowRight, FaRobot, FaStar } from 'react-icons/fa';
+import AICommandCenter from '@/components/ai/AICommandCenter';
 
 /* ── Lazy-load heavy analytics sections ─────────────────────────── */
 const SectionSkeleton = () => (
@@ -57,6 +58,7 @@ export default function Dashboard() {
   const [records,    setRecords]    = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [systemTime, setSystemTime] = useState('');
+  const [showAICenter, setShowAICenter] = useState(false);
 
   useEffect(() => {
     API.get('/production')
@@ -105,6 +107,29 @@ export default function Dashboard() {
           <p style={{ fontSize: 13, color: '#7878a0', maxWidth: 540, lineHeight: 1.6 }}>
             Industrial DBMS analytics platform — structured relational intelligence for manufacturing leadership.
           </p>
+          
+          {/* AI Command Center Button */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setShowAICenter(true)}
+            className="mt-3 ff-glass-hover rounded-xl px-4 py-3 flex items-center gap-3 transition-all"
+            style={{ border: '1px solid rgba(99,102,241,0.2)', background: 'linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.1) 100%)' }}
+          >
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center ff-pulse-glow"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)' }}>
+              <FaRobot size={16} color="white" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-semibold" style={{ color: '#f0f0f4' }}>
+                AI Intelligence Suite
+              </p>
+              <p className="text-xs" style={{ color: '#818cf8' }}>
+                4 advanced AI features available
+              </p>
+            </div>
+            <FaStar size={12} style={{ color: '#f59e0b', marginLeft: 'auto' }} />
+          </motion.button>
         </div>
 
         <div
@@ -264,6 +289,13 @@ export default function Dashboard() {
           ))}
         </div>
       </motion.div>
+
+      {/* AI Command Center Modal */}
+      <AnimatePresence>
+        {showAICenter && (
+          <AICommandCenter onClose={() => setShowAICenter(false)} />
+        )}
+      </AnimatePresence>
 
     </motion.div>
   );

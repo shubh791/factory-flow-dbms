@@ -46,6 +46,11 @@
   --transition-fast: 150ms ease;
   --transition-base: 220ms ease;
   --transition-slow: 350ms ease;
+
+  /* Premium Effects */
+  --glow-primary: 0 0 20px rgba(99,102,241,0.15), 0 0 40px rgba(99,102,241,0.1);
+  --glow-success: 0 0 20px rgba(16,185,129,0.15), 0 0 40px rgba(16,185,129,0.1);
+  --glow-warning: 0 0 20px rgba(245,158,11,0.15), 0 0 40px rgba(245,158,11,0.1);
 }
 
 /* ─── Base Reset ────────────────────────────────────────────────────── */
@@ -608,4 +613,102 @@
 /* ─── ECharts overrides ──────────────────────────────────────────────── */
 .echarts-for-react canvas {
   border-radius: inherit;
+}
+
+
+/* ─── Premium UI Enhancements ──────────────────────────────────────────── */
+.ff-glass {
+  background: rgba(23, 23, 28, 0.6);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ff-glass-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ff-glass-hover:hover {
+  background: rgba(27, 27, 34, 0.75);
+  border-color: rgba(99, 102, 241, 0.25);
+  box-shadow: var(--glow-primary);
+  transform: translateY(-2px);
+}
+
+.ff-gradient-card {
+  background: linear-gradient(135deg, rgba(99,102,241,0.05) 0%, rgba(168,85,247,0.05) 100%);
+  border: 1px solid rgba(99,102,241,0.15);
+}
+
+.ff-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.ff-shine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.5s;
+}
+
+.ff-shine:hover::before {
+  left: 100%;
+}
+
+/* Animated gradient borders */
+@keyframes border-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.ff-animated-border {
+  background: linear-gradient(90deg, #6366f1, #a855f7, #6366f1);
+  background-size: 200% 200%;
+  animation: border-flow 3s ease infinite;
+}
+
+/* Pulse glow effect */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(99,102,241,0.1); }
+  50% { box-shadow: 0 0 40px rgba(99,102,241,0.25), 0 0 60px rgba(99,102,241,0.1); }
+}
+
+.ff-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Premium metric cards */
+.ff-metric-premium {
+  background: linear-gradient(135deg, var(--z-800) 0%, var(--z-750) 100%);
+  border: 1px solid var(--z-600);
+  position: relative;
+  overflow: hidden;
+}
+
+.ff-metric-premium::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Loading shimmer */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.ff-shimmer {
+  background: linear-gradient(90deg, var(--z-800) 0%, var(--z-750) 50%, var(--z-800) 100%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
 }
