@@ -1,57 +1,67 @@
-/* Light Theme Variables */
+/* ═══════════════════════════════════════════════════════════════════════
+   LIGHT MODE - Industrial Analytics Platform
+═══════════════════════════════════════════════════════════════════════ */
+
 [data-theme='light'] {
-  /* Light Mode Surface Scale */
-  --z-950: #ffffff;   /* page bg */
-  --z-900: #f8f9fa;   /* sidebar / nav */
-  --z-800: #f1f3f5;   /* card */
-  --z-750: #e9ecef;   /* card hover */
-  --z-700: #dee2e6;   /* elevated card */
-  --z-650: #ced4da;   /* floating panels */
-  --z-600: #adb5bd;   /* border bright */
-  --z-500: #868e96;   /* border visible */
-  --z-400: #6c757d;   /* disabled / muted edge */
-
-  /* Typography - Dark text for light bg */
-  --t-1: #212529;   /* primary */
-  --t-2: #495057;   /* secondary */
-  --t-3: #6c757d;   /* muted */
-  --t-4: #adb5bd;   /* ghost */
-  --t-hi: #000000;
-
-  /* Accent - Slightly darker for visibility */
-  --vi-400: #5f66d6;
-  --vi-500: #4f46e5;
-  --vi-600: #4338ca;
-
-  /* Status - Darker shades */
-  --ok:   #059669;
-  --warn: #d97706;
-  --bad:  #dc2626;
-  --info: #2563eb;
-  --purp: #9333ea;
-  --teal: #0d9488;
-
-  /* Shadows for depth in light mode */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  /* Light Mode - Soft Gray/Blue Industrial */
+  --bg-primary: #f5f7fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f9fafb;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f3f4f6;
+  
+  --border-primary: #e5e7eb;
+  --border-secondary: #d1d5db;
+  --border-accent: #9ca3af;
+  
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-tertiary: #6b7280;
+  --text-muted: #9ca3af;
+  
+  /* Semantic Colors - Same as dark */
+  --color-success: #059669;
+  --color-success-bg: rgba(5, 150, 105, 0.1);
+  --color-success-border: rgba(5, 150, 105, 0.3);
+  
+  --color-danger: #dc2626;
+  --color-danger-bg: rgba(220, 38, 38, 0.1);
+  --color-danger-border: rgba(220, 38, 38, 0.3);
+  
+  --color-warning: #d97706;
+  --color-warning-bg: rgba(217, 119, 6, 0.1);
+  --color-warning-border: rgba(217, 119, 6, 0.3);
+  
+  --color-info: #2563eb;
+  --color-info-bg: rgba(37, 99, 235, 0.1);
+  --color-info-border: rgba(37, 99, 235, 0.3);
+  
+  --color-neutral: #4b5563;
+  --color-neutral-bg: rgba(75, 85, 99, 0.1);
+  --color-neutral-border: rgba(75, 85, 99, 0.3);
+  
+  /* Shadows - Light Mode */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
-/* Light Mode Specific Adjustments */
-[data-theme='light'] .ff-card {
+[data-theme='light'] ::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+}
+
+[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: var(--border-secondary);
+}
+
+[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+  background: var(--border-accent);
+}
+
+[data-theme='light'] .industrial-card {
   box-shadow: var(--shadow-sm);
 }
 
-[data-theme='light'] .ff-card:hover {
+[data-theme='light'] .industrial-card-elevated {
   box-shadow: var(--shadow-md);
-}
-
-[data-theme='light'] .ff-glass {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-[data-theme='light'] .ff-pulse-glow {
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
 }
