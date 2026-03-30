@@ -1,31 +1,102 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { FaIndustry, FaPlus, FaSearch, FaFilter, FaDownload, FaChartLine } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTimes, FaSave } from 'react-icons/fa';
 import API from '@/lib/api';
-import Link from 'next/link';
 
 export default function ProductionPage() {
   const [production, setProduction] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [shift, setShift] = useState('all');
+  const [showModal, setShowModal] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [formData, setFormData] = useState({
+    id: null,
+    units: '',
+    defects: '',
+    productId: '',
+    employeeId: '',
+    shift: 'MORNING',
+  });
 
   useEffect(() => {
-    API.get('/production')
-      .then(res => {
-        setProduction(res.data || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    fetchData();
   }, []);
 
-  const filtered = production.filter(record => {
-    const matchesSearch = record.product?.name.toLowerCase().includes(search.toLowerCase());
-    const matchesShift = shift === 'all' || record.shift === shift;
-    return matchesSearch && matchesShift;
-  });
+  const fetchData = async () => {
+    try {
+      const [prodRes, productsRes, empRes] = await Promise.all([
+        API.get('/production'),
+        API.get('/products'),
+        API.get('/employees'),
+      ]);
+      setProduction(prodRes.data || []);
+      setProducts(productsRes.data || []);
+      setEmployees(empRes.data || []);
+      setLoading(false);
+    } catch (error) {
+      console.error('Fetch error:', error);
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editMode) {
+        await API.patch(`/production/${formData.id}`, {
+          units: Number(formData.units),
+          defects: Number(formData.defects),
+          productId: Number(formData.productId),
+          employeeId: Number(formData.employeeId),
+          shift: formData.shift,
+        });
+      } else {
+        await API.post('/production', {
+          units: Number(formData.units),
+          defects: Number(formData.defects),
+          productId: Number(formData.productId),
+          employeeId: Number(formData.employeeId),
+          shift: formData.shift,
+        });
+      }
+      fetchData();
+      closeModal();
+    } catch (error) {
+      alert(error.response?.data?.error || 'Operation failed');
+    }
+  };
+
+  const openAddModal = () => {
+    setEditMode(false);
+    setFormData({
+      id: null,
+      units: '',
+      defects: '0',
+      productId: products[0]?.id || '',
+      employeeId: employees[0]?.id || '',
+      shift: 'MORNING',
+    });
+    setShowModal(true);
+  };
+
+  const openEditModal = (record) => {
+    setEditMode(true);
+    setFormData({
+      id: record.id,
+      units: record.units,
+      defects: record.defects,
+      productId: record.product?.id || '',
+      employeeId: record.employee?.id || '',
+      shift: record.shift,
+    });
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+  };
 
   const stats = {
     totalUnits: production.reduce((sum, r) => sum + r.units, 0),
@@ -46,115 +117,57 @@ export default function ProductionPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-1">Production Records</h1>
           <p className="text-sm text-[var(--text-secondary)]">Manufacturing output, quality metrics, and shift performance</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="btn-industrial btn-secondary flex items-center gap-2">
-            <FaDownload size={12} />
-            <span>Export</span>
-          </button>
-          <Link href="/production/new" className="btn-industrial btn-primary flex items-center gap-2">
-            <FaPlus size={12} />
-            <span>New Record</span>
-          </Link>
-        </div>
+        <button onClick={openAddModal} className="btn-industrial btn-primary flex items-center gap-2">
+          <FaPlus size={12} />
+          <span>New Record</span>
+        </button>
       </div>
 
-      {/* Stats */}
       <div className="grid-industrial-3">
         <div className="kpi-card">
           <div className="kpi-label">Total Production</div>
           <div className="kpi-value">{stats.totalUnits.toLocaleString()}</div>
-          <div className="text-xs text-[var(--text-tertiary)] mt-1">Units manufactured</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-label">Average Efficiency</div>
           <div className="kpi-value text-[var(--color-success)]">{stats.avgEfficiency.toFixed(1)}%</div>
-          <div className="text-xs text-[var(--text-tertiary)] mt-1">Quality performance</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-label">Total Defects</div>
           <div className="kpi-value text-[var(--color-danger)]">{stats.totalDefects}</div>
-          <div className="text-xs text-[var(--text-tertiary)] mt-1">Quality issues detected</div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="industrial-card-elevated p-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 relative">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={12} />
-            <input
-              type="text"
-              placeholder="Search by product name..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input-industrial pl-9 w-full"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <FaFilter className="text-[var(--text-muted)]" size={12} />
-            <select
-              value={shift}
-              onChange={(e) => setShift(e.target.value)}
-              className="select-industrial"
-            >
-              <option value="all">All Shifts</option>
-              <option value="MORNING">Morning</option>
-              <option value="EVENING">Evening</option>
-              <option value="NIGHT">Night</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Production Table */}
       <div className="industrial-card-elevated p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-sm font-semibold text-[var(--text-primary)]">All Production Records</h3>
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{filtered.length} records found</p>
-          </div>
-          <Link href="/production-insights" className="text-xs text-[var(--color-info)] hover:underline flex items-center gap-1">
-            <FaChartLine size={10} />
-            <span>View Analytics</span>
-          </Link>
-        </div>
         <div className="overflow-x-auto">
           <table className="table-industrial">
             <thead>
               <tr>
                 <th>Product</th>
-                <th>Units Produced</th>
+                <th>Units</th>
                 <th>Defects</th>
-                <th>Defect Rate</th>
                 <th>Efficiency</th>
                 <th>Shift</th>
                 <th>Employee</th>
                 <th>Date</th>
-                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((record) => {
+              {production.map((record) => {
                 const efficiency = record.units > 0 ? ((record.units - record.defects) / record.units * 100) : 0;
-                const defectRate = record.units > 0 ? (record.defects / record.units * 100) : 0;
                 return (
                   <tr key={record.id}>
                     <td className="font-medium">{record.product?.name || 'N/A'}</td>
                     <td className="font-semibold">{record.units}</td>
                     <td>
-                      <span className={defectRate > 5 ? 'text-[var(--color-danger)]' : 'text-[var(--text-primary)]'}>
+                      <span className={(record.defects / record.units * 100) > 5 ? 'text-[var(--color-danger)]' : 'text-[var(--text-primary)]'}>
                         {record.defects}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={defectRate > 5 ? 'text-[var(--color-danger)]' : defectRate > 2 ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}>
-                        {defectRate.toFixed(2)}%
                       </span>
                     </td>
                     <td>
@@ -170,12 +183,13 @@ export default function ProductionPage() {
                       {new Date(record.productionDate).toLocaleDateString()}
                     </td>
                     <td>
-                      <div className="flex items-center gap-1.5">
-                        <div className={`status-dot ${efficiency >= 95 ? 'status-active' : efficiency >= 85 ? 'status-warning' : 'status-error'}`} />
-                        <span className="text-xs">
-                          {efficiency >= 95 ? 'Excellent' : efficiency >= 85 ? 'Normal' : 'Review'}
-                        </span>
-                      </div>
+                      <button
+                        onClick={() => openEditModal(record)}
+                        className="text-xs text-[var(--color-info)] hover:underline flex items-center gap-1"
+                      >
+                        <FaEdit size={10} />
+                        Edit
+                      </button>
                     </td>
                   </tr>
                 );
@@ -183,12 +197,105 @@ export default function ProductionPage() {
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 && (
-          <div className="text-center py-12 text-[var(--text-muted)]">
-            No production records found matching your criteria
-          </div>
-        )}
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="industrial-card-elevated w-full max-w-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+                {editMode ? 'Edit Production Record' : 'Add Production Record'}
+              </h3>
+              <button onClick={closeModal} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                <FaTimes size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Product *</label>
+                <select
+                  required
+                  value={formData.productId}
+                  onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
+                  className="select-industrial"
+                >
+                  <option value="">Select product...</option>
+                  {products.map(product => (
+                    <option key={product.id} value={product.id}>{product.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Units Produced *</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={formData.units}
+                    onChange={(e) => setFormData({ ...formData, units: e.target.value })}
+                    className="input-industrial"
+                    placeholder="e.g., 100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Defects</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.defects}
+                    onChange={(e) => setFormData({ ...formData, defects: e.target.value })}
+                    className="input-industrial"
+                    placeholder="e.g., 5"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Shift *</label>
+                  <select
+                    required
+                    value={formData.shift}
+                    onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
+                    className="select-industrial"
+                  >
+                    <option value="MORNING">Morning</option>
+                    <option value="EVENING">Evening</option>
+                    <option value="NIGHT">Night</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Employee *</label>
+                  <select
+                    required
+                    value={formData.employeeId}
+                    onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+                    className="select-industrial"
+                  >
+                    <option value="">Select employee...</option>
+                    {employees.filter(e => e.status === 'ACTIVE').map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.name} ({emp.employeeCode})</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={closeModal} className="btn-industrial btn-secondary flex-1">
+                  Cancel
+                </button>
+                <button type="submit" className="btn-industrial btn-primary flex-1 flex items-center justify-center gap-2">
+                  <FaSave size={12} />
+                  <span>{editMode ? 'Update' : 'Create'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

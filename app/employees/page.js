@@ -1,32 +1,121 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { FaUsers, FaUserPlus, FaSearch, FaFilter, FaDownload, FaUserTie } from 'react-icons/fa';
+import { FaUserPlus, FaEdit, FaTimes, FaSave } from 'react-icons/fa';
 import API from '@/lib/api';
-import Link from 'next/link';
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all');
+  const [showModal, setShowModal] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [formData, setFormData] = useState({
+    id: null,
+    name: '',
+    employeeCode: '',
+    email: '',
+    phone: '',
+    experience: 0,
+    departmentId: '',
+    roleId: '',
+  });
 
   useEffect(() => {
-    API.get('/employees')
-      .then(res => {
-        setEmployees(res.data || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    fetchData();
   }, []);
 
-  const filtered = employees.filter(emp => {
-    const matchesSearch = emp.name.toLowerCase().includes(search.toLowerCase()) ||
-                         emp.employeeCode.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === 'all' || emp.status === filter;
-    return matchesSearch && matchesFilter;
-  });
+  const fetchData = async () => {
+    try {
+      const [empRes, deptRes, roleRes] = await Promise.all([
+        API.get('/employees'),
+        API.get('/departments'),
+        API.get('/roles'),
+      ]);
+      setEmployees(empRes.data || []);
+      setDepartments(deptRes.data || []);
+      setRoles(roleRes.data || []);
+      setLoading(false);
+    } catch (error) {
+      console.error('Fetch error:', error);
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editMode) {
+        await API.patch(`/employees/${formData.id}`, {
+          name: formData.name,
+          email: formData.email || null,
+          phone: formData.phone || null,
+          experience: Number(formData.experience),
+          departmentId: Number(formData.departmentId),
+          roleId: Number(formData.roleId),
+        });
+      } else {
+        await API.post('/employees', {
+          name: formData.name,
+          employeeCode: formData.employeeCode,
+          email: formData.email || null,
+          phone: formData.phone || null,
+          experience: Number(formData.experience),
+          departmentId: Number(formData.departmentId),
+          roleId: Number(formData.roleId),
+        });
+      }
+      fetchData();
+      closeModal();
+    } catch (error) {
+      alert(error.response?.data?.error || 'Operation failed');
+    }
+  };
+
+  const openAddModal = () => {
+    setEditMode(false);
+    setFormData({
+      id: null,
+      name: '',
+      employeeCode: '',
+      email: '',
+      phone: '',
+      experience: 0,
+      departmentId: departments[0]?.id || '',
+      roleId: roles[0]?.id || '',
+    });
+    setShowModal(true);
+  };
+
+  const openEditModal = (emp) => {
+    setEditMode(true);
+    setFormData({
+      id: emp.id,
+      name: emp.name,
+      employeeCode: emp.employeeCode,
+      email: emp.email || '',
+      phone: emp.phone || '',
+      experience: emp.experience,
+      departmentId: emp.departmentId,
+      roleId: emp.roleId,
+    });
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setFormData({
+      id: null,
+      name: '',
+      employeeCode: '',
+      email: '',
+      phone: '',
+      experience: 0,
+      departmentId: '',
+      roleId: '',
+    });
+  };
 
   const stats = {
     total: employees.length,
@@ -45,73 +134,32 @@ export default function EmployeesPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-1">Workforce Management</h1>
           <p className="text-sm text-[var(--text-secondary)]">Employee records, performance, and resource allocation</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="btn-industrial btn-secondary flex items-center gap-2">
-            <FaDownload size={12} />
-            <span>Export</span>
-          </button>
-          <Link href="/employees/new" className="btn-industrial btn-primary flex items-center gap-2">
-            <FaUserPlus size={12} />
-            <span>Add Employee</span>
-          </Link>
-        </div>
+        <button onClick={openAddModal} className="btn-industrial btn-primary flex items-center gap-2">
+          <FaUserPlus size={12} />
+          <span>Add Employee</span>
+        </button>
       </div>
 
-      {/* Stats */}
       <div className="grid-industrial-3">
         <div className="kpi-card">
           <div className="kpi-label">Total Workforce</div>
           <div className="kpi-value">{stats.total}</div>
-          <div className="text-xs text-[var(--text-tertiary)] mt-1">Active employees</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-label">Active Status</div>
           <div className="kpi-value text-[var(--color-success)]">{stats.active}</div>
-          <div className="text-xs text-[var(--text-tertiary)] mt-1">Currently working</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-label">On Leave</div>
           <div className="kpi-value text-[var(--color-warning)]">{stats.onLeave}</div>
-          <div className="text-xs text-[var(--text-tertiary)] mt-1">Temporary absence</div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="industrial-card-elevated p-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 relative">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={12} />
-            <input
-              type="text"
-              placeholder="Search by name or employee code..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input-industrial pl-9 w-full"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <FaFilter className="text-[var(--text-muted)]" size={12} />
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="select-industrial"
-            >
-              <option value="all">All Status</option>
-              <option value="ACTIVE">Active</option>
-              <option value="ON_LEAVE">On Leave</option>
-              <option value="RESIGNED">Resigned</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Employee Table */}
       <div className="industrial-card-elevated p-5">
         <div className="overflow-x-auto">
           <table className="table-industrial">
@@ -127,7 +175,7 @@ export default function EmployeesPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((emp) => (
+              {employees.map((emp) => (
                 <tr key={emp.id}>
                   <td>
                     <div className="flex items-center gap-3">
@@ -142,12 +190,7 @@ export default function EmployeesPage() {
                   </td>
                   <td className="font-mono text-xs">{emp.employeeCode}</td>
                   <td>{emp.department?.name || 'N/A'}</td>
-                  <td>
-                    <div className="flex items-center gap-1.5">
-                      <FaUserTie size={12} className="text-[var(--color-info)]" />
-                      <span>{emp.role?.title || 'N/A'}</span>
-                    </div>
-                  </td>
+                  <td>{emp.role?.title || 'N/A'}</td>
                   <td>{emp.experience} years</td>
                   <td>
                     <span className={`badge ${
@@ -159,24 +202,138 @@ export default function EmployeesPage() {
                     </span>
                   </td>
                   <td>
-                    <Link
-                      href={`/employees/${emp.id}`}
-                      className="text-xs text-[var(--color-info)] hover:underline"
+                    <button
+                      onClick={() => openEditModal(emp)}
+                      className="text-xs text-[var(--color-info)] hover:underline flex items-center gap-1"
                     >
-                      View Details
-                    </Link>
+                      <FaEdit size={10} />
+                      Edit
+                    </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 && (
-          <div className="text-center py-12 text-[var(--text-muted)]">
-            No employees found matching your criteria
-          </div>
-        )}
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="industrial-card-elevated w-full max-w-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+                {editMode ? 'Edit Employee' : 'Add New Employee'}
+              </h3>
+              <button onClick={closeModal} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                <FaTimes size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="input-industrial"
+                  placeholder="Full name"
+                />
+              </div>
+
+              {!editMode && (
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Employee Code *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.employeeCode}
+                    onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
+                    className="input-industrial"
+                    placeholder="E.g., EMP001"
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="input-industrial"
+                    placeholder="email@example.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="input-industrial"
+                    placeholder="+1234567890"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Experience (years)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.experience}
+                  onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+                  className="input-industrial"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Department *</label>
+                  <select
+                    required
+                    value={formData.departmentId}
+                    onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
+                    className="select-industrial"
+                  >
+                    <option value="">Select...</option>
+                    {departments.map(dept => (
+                      <option key={dept.id} value={dept.id}>{dept.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Role *</label>
+                  <select
+                    required
+                    value={formData.roleId}
+                    onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
+                    className="select-industrial"
+                  >
+                    <option value="">Select...</option>
+                    {roles.map(role => (
+                      <option key={role.id} value={role.id}>{role.title}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={closeModal} className="btn-industrial btn-secondary flex-1">
+                  Cancel
+                </button>
+                <button type="submit" className="btn-industrial btn-primary flex-1 flex items-center justify-center gap-2">
+                  <FaSave size={12} />
+                  <span>{editMode ? 'Update' : 'Create'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
