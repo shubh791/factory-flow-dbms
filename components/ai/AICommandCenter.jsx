@@ -13,6 +13,7 @@ import {
   FaLightbulb
 } from 'react-icons/fa';
 import API from '@/lib/api';
+import EnhancedAIResults from './EnhancedAIResults';
 
 const AI_FEATURES = [
   {
@@ -210,58 +211,7 @@ export default function AICommandCenter({ onClose }) {
                   </button>
                 </div>
 
-                <div className="space-y-4">
-                  {Object.entries(data).map(([key, value]) => {
-                    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                      return (
-                        <div key={key} className="ff-card p-5">
-                          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#818cf8' }}>
-                            {key.replace(/([A-Z])/g, ' $1').trim()}
-                          </p>
-                          <pre className="text-xs overflow-x-auto whitespace-pre-wrap" style={{ color: '#9090a4' }}>
-                            {JSON.stringify(value, null, 2)}
-                          </pre>
-                        </div>
-                      );
-                    }
-                    
-                    if (Array.isArray(value) && value.length > 0) {
-                      return (
-                        <div key={key} className="ff-card p-5">
-                          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#818cf8' }}>
-                            {key.replace(/([A-Z])/g, ' $1').trim()}
-                          </p>
-                          <div className="space-y-2">
-                            {value.map((item, idx) => (
-                              <div key={idx} className="rounded-lg p-3" style={{ background: '#0c0c0f', border: '1px solid #1f1f28' }}>
-                                {typeof item === 'string' ? (
-                                  <p className="text-sm" style={{ color: '#9090a4' }}>{item}</p>
-                                ) : (
-                                  <pre className="text-xs overflow-x-auto whitespace-pre-wrap" style={{ color: '#9090a4' }}>
-                                    {JSON.stringify(item, null, 2)}
-                                  </pre>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    if (typeof value === 'string' || typeof value === 'number') {
-                      return (
-                        <div key={key} className="flex items-center justify-between py-2">
-                          <p className="text-sm" style={{ color: '#7878a0' }}>
-                            {key.replace(/([A-Z])/g, ' $1').trim()}
-                          </p>
-                          <p className="text-sm font-semibold" style={{ color: '#f0f0f4' }}>{value}</p>
-                        </div>
-                      );
-                    }
-
-                    return null;
-                  })}
-                </div>
+                <EnhancedAIResults data={data} feature={selectedFeature} />
               </motion.div>
             )}
           </div>

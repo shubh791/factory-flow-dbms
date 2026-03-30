@@ -6,36 +6,36 @@
 
 /* ─── CSS Custom Properties ─────────────────────────────────────────── */
 :root {
-  /* Obsidian Studio — surface scale */
-  --z-950: #0c0c0f;   /* page bg */
-  --z-900: #111116;   /* sidebar / nav */
-  --z-800: #17171c;   /* card */
-  --z-750: #1b1b22;   /* card hover */
-  --z-700: #1f1f28;   /* elevated card */
-  --z-650: #25252f;   /* floating panels */
-  --z-600: #2c2c38;   /* border bright */
-  --z-500: #3a3a4a;   /* border visible */
-  --z-400: #4d4d62;   /* disabled / muted edge */
+  /* Enhanced Dark Theme - Better Contrast */
+  --z-950: #0a0a0f;   /* page bg - darker */
+  --z-900: #13131a;   /* sidebar / nav - lighter */
+  --z-800: #1a1a24;   /* card - more contrast */
+  --z-750: #20202e;   /* card hover */
+  --z-700: #262636;   /* elevated card - brighter */
+  --z-650: #2d2d40;   /* floating panels */
+  --z-600: #38384e;   /* border bright - more visible */
+  --z-500: #45455e;   /* border visible */
+  --z-400: #56567a;   /* disabled / muted edge */
 
-  /* Typography */
-  --t-1: #f0f0f4;   /* primary */
-  --t-2: #9090a4;   /* secondary */
-  --t-3: #54546a;   /* muted */
-  --t-4: #30303e;   /* ghost */
+  /* Typography - Enhanced Contrast */
+  --t-1: #fafafc;   /* primary - brighter */
+  --t-2: #a8a8c0;   /* secondary - more visible */
+  --t-3: #6b6b8a;   /* muted - better contrast */
+  --t-4: #3e3e58;   /* ghost */
   --t-hi: #ffffff;
 
-  /* Accent — indigo / violet */
-  --vi-400: #818cf8;
-  --vi-500: #6366f1;
-  --vi-600: #4f46e5;
+  /* Accent - Brighter */
+  --vi-400: #9ca3ff;
+  --vi-500: #818cf8;
+  --vi-600: #6366f1;
 
-  /* Status */
-  --ok:   #10b981;
-  --warn: #f59e0b;
-  --bad:  #f43f5e;
-  --info: #38bdf8;
-  --purp: #a855f7;
-  --teal: #14b8a6;
+  /* Status - More Vibrant */
+  --ok:   #34d399;
+  --warn: #fbbf24;
+  --bad:  #f87171;
+  --info: #60a5fa;
+  --purp: #c084fc;
+  --teal: #2dd4bf;
 
   --sidebar-w: 264px;
   --navbar-h: 64px;
