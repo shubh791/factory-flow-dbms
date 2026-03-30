@@ -1,0 +1,57 @@
+/* Light Theme Variables */
+[data-theme='light'] {
+  /* Light Mode Surface Scale */
+  --z-950: #ffffff;   /* page bg */
+  --z-900: #f8f9fa;   /* sidebar / nav */
+  --z-800: #f1f3f5;   /* card */
+  --z-750: #e9ecef;   /* card hover */
+  --z-700: #dee2e6;   /* elevated card */
+  --z-650: #ced4da;   /* floating panels */
+  --z-600: #adb5bd;   /* border bright */
+  --z-500: #868e96;   /* border visible */
+  --z-400: #6c757d;   /* disabled / muted edge */
+
+  /* Typography - Dark text for light bg */
+  --t-1: #212529;   /* primary */
+  --t-2: #495057;   /* secondary */
+  --t-3: #6c757d;   /* muted */
+  --t-4: #adb5bd;   /* ghost */
+  --t-hi: #000000;
+
+  /* Accent - Slightly darker for visibility */
+  --vi-400: #5f66d6;
+  --vi-500: #4f46e5;
+  --vi-600: #4338ca;
+
+  /* Status - Darker shades */
+  --ok:   #059669;
+  --warn: #d97706;
+  --bad:  #dc2626;
+  --info: #2563eb;
+  --purp: #9333ea;
+  --teal: #0d9488;
+
+  /* Shadows for depth in light mode */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+/* Light Mode Specific Adjustments */
+[data-theme='light'] .ff-card {
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme='light'] .ff-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+[data-theme='light'] .ff-glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='light'] .ff-pulse-glow {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}

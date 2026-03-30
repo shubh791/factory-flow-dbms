@@ -1,4 +1,5 @@
 import './globals.css';
+import './light-theme.css';
 import ThemeRegistry from '@/components/ThemeRegistry';
 import LayoutShell from '@/components/layout/LayoutShell';
 import { ThemeProvider } from '@/lib/context/ThemeContext';

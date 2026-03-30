@@ -158,14 +158,24 @@ export default function EnhancedAIResults({ data, feature }) {
 
   // Performance Benchmark View
   if (feature.id === 'benchmark') {
+    const strengths = Array.isArray(data.strengths) ? data.strengths : [];
+    const weaknesses = Array.isArray(data.weaknesses) ? data.weaknesses : [];
+    
     return (
       <div className="space-y-6">
         {data.performanceGrade && (
           <div className="rounded-2xl p-6 text-center" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15))', border: '2px solid rgba(99,102,241,0.3)' }}>
             <FaTrophy size={40} style={{ color: '#6366f1', margin: '0 auto 16px' }} />
             <p className="text-sm uppercase tracking-wider mb-2" style={{ color: '#6366f1' }}>Performance Grade</p>
-            <p className="text-5xl font-bold" style={{ color: '#f0f0f4' }}>{data.performanceGrade}</p>
-          </div>
+            <p className="text-5xl font-bold mb-2" style={{ color: '#f0f0f4' }}>{data.performanceGrade}</p>
+            {data.justification && (
+              <p className="text-xs" style={{ color: '#7878a0', maxWidth: 500, margin: '0 auto' }}>{data.justification}</p>
+            )}
+            {data.competitivePosition && (
+              <div className="mt-3 inline-block px-3 py-1 rounded-full" style={{ background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.3)' }}>
+                <p className="text-xs font-semibold" style={{ color: '#10b981' }}>{data.competitivePosition}</p>
+              </div>
+            )}\n          </div>
         )}
 
         {data.currentMetrics && data.benchmarks && (
@@ -180,7 +190,7 @@ export default function EnhancedAIResults({ data, feature }) {
                 </span>
               </div>
               <div className="w-full h-2 rounded-full" style={{ background: '#1f1f28' }}>
-                <div className="h-full rounded-full" style={{ width: `${(data.currentMetrics.efficiency / data.benchmarks.efficiency) * 100}%`, background: 'linear-gradient(90deg, #6366f1, #a855f7)' }} />
+                <div className="h-full rounded-full" style={{ width: `${Math.min((data.currentMetrics.efficiency / data.benchmarks.efficiency) * 100, 100)}%`, background: 'linear-gradient(90deg, #6366f1, #a855f7)' }} />
               </div>
             </div>
 
@@ -204,33 +214,53 @@ export default function EnhancedAIResults({ data, feature }) {
                 </span>
               </div>
               <div className="w-full h-2 rounded-full" style={{ background: '#1f1f28' }}>
-                <div className="h-full rounded-full" style={{ width: `${(data.currentMetrics.profitMargin / data.benchmarks.profitMargin) * 100}%`, background: 'linear-gradient(90deg, #10b981, #14b8a6)' }} />
+                <div className="h-full rounded-full" style={{ width: `${Math.min((data.currentMetrics.profitMargin / data.benchmarks.profitMargin) * 100, 100)}%`, background: 'linear-gradient(90deg, #10b981, #14b8a6)' }} />
               </div>
             </div>
           </div>
         )}
 
-        {data.strengths && data.strengths.length > 0 && (
+        {strengths.length > 0 && (
           <div className="rounded-xl p-4" style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)' }}>
             <h3 className="text-sm font-semibold uppercase tracking-wider mb-3 flex items-center gap-2" style={{ color: '#10b981' }}>
               <FaCheckCircle size={14} /> Strengths
             </h3>
             <ul className="space-y-2">
-              {data.strengths.map((strength, idx) => (
-                <li key={idx} className="text-sm" style={{ color: '#9090a4' }}>• {strength}</li>
+              {strengths.map((strength, idx) => (
+                <li key={idx} className="text-sm" style={{ color: '#9090a4' }}>
+                  • {typeof strength === 'string' ? strength : strength.metric ? `${strength.metric}: ${strength.value}` : JSON.stringify(strength)}
+                </li>
               ))}
             </ul>
           </div>
         )}
 
-        {data.weaknesses && data.weaknesses.length > 0 && (
+        {weaknesses.length > 0 && (
           <div className="rounded-xl p-4" style={{ background: 'rgba(244,63,94,0.05)', border: '1px solid rgba(244,63,94,0.2)' }}>
             <h3 className="text-sm font-semibold uppercase tracking-wider mb-3 flex items-center gap-2" style={{ color: '#f43f5e' }}>
               <FaExclamationTriangle size={14} /> Areas for Improvement
             </h3>
             <ul className="space-y-2">
-              {data.weaknesses.map((weakness, idx) => (
-                <li key={idx} className="text-sm" style={{ color: '#9090a4' }}>• {weakness}</li>
+              {weaknesses.map((weakness, idx) => (
+                <li key={idx} className="text-sm" style={{ color: '#9090a4' }}>
+                  • {typeof weakness === 'string' ? weakness : weakness.metric ? `${weakness.metric}: ${weakness.value}` : JSON.stringify(weakness)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {data.actionPlan && data.actionPlan.length > 0 && (
+          <div className="rounded-xl p-4" style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.2)' }}>
+            <h3 className="text-sm font-semibold uppercase tracking-wider mb-3 flex items-center gap-2" style={{ color: '#6366f1' }}>
+              <FaLightbulb size={14} /> Action Plan
+            </h3>
+            <ul className="space-y-2">
+              {data.actionPlan.slice(0, 5).map((action, idx) => (
+                <li key={idx} className="text-sm flex items-start gap-2" style={{ color: '#9090a4' }}>
+                  <span className="font-semibold" style={{ color: '#6366f1', minWidth: 20 }}>{idx + 1}.</span>
+                  <span>{typeof action === 'string' ? action : action.action || JSON.stringify(action)}</span>
+                </li>
               ))}
             </ul>
           </div>
