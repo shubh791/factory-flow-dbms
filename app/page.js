@@ -2,9 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FaIndustry, FaUsers, FaChartLine, FaExclamationTriangle, FaTachometerAlt, FaCog, FaBrain } from 'react-icons/fa';
+import Link from 'next/link';
+import { FaIndustry, FaUsers, FaTachometerAlt, FaExclamationTriangle, FaBrain, FaArrowRight } from 'react-icons/fa';
+import dynamic from 'next/dynamic';
 import API from '@/lib/api';
 import AICommandCenter from '@/components/ai/AICommandCenter';
+import KPIStats from '@/components/charts/KPIStats';
+
+const ProductionChart = dynamic(() => import('@/components/charts/ProductionChart'), { ssr: false });
+const EfficiencyChart = dynamic(() => import('@/components/charts/EfficiencyChart'), { ssr: false });
 
 export default function Dashboard() {
   const [summary, setSummary] = useState(null);
@@ -18,12 +24,12 @@ export default function Dashboard() {
       API.get('/production')
     ]).then(([summaryRes, prodRes]) => {
       setSummary(summaryRes.data);
-      setProduction(prodRes.data.slice(0, 10));
+      setProduction(prodRes.data || []);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
 
-  if (loading || !summary) {
+  if (loading) {
     return (
       <div className="p-6">
         <div className="grid-industrial-4">
@@ -38,16 +44,16 @@ export default function Dashboard() {
   const kpis = [
     {
       label: 'Production Output',
-      value: summary.totalProduction?.toLocaleString() || '0',
+      value: summary?.totalProduction?.toLocaleString() || '0',
       unit: 'units',
-      change: '+12.5%',
+      change: summary?.productionChange || '+12.5%',
       positive: true,
       icon: FaIndustry,
       color: 'var(--color-info)',
     },
     {
       label: 'Active Workforce',
-      value: summary.activeEmployees || '0',
+      value: summary?.activeEmployees || '0',
       unit: 'employees',
       change: '+3',
       positive: true,
@@ -56,7 +62,7 @@ export default function Dashboard() {
     },
     {
       label: 'System Efficiency',
-      value: summary.avgEfficiency ? `${summary.avgEfficiency.toFixed(1)}%` : '0%',
+      value: summary?.avgEfficiency ? `${summary.avgEfficiency.toFixed(1)}%` : '0%',
       unit: '',
       change: '+2.1%',
       positive: true,
@@ -65,12 +71,12 @@ export default function Dashboard() {
     },
     {
       label: 'Defect Rate',
-      value: summary.avgDefectRate ? `${summary.avgDefectRate.toFixed(2)}%` : '0%',
+      value: summary?.avgDefectRate ? `${summary.avgDefectRate.toFixed(2)}%` : '0%',
       unit: '',
       change: '-0.5%',
       positive: true,
       icon: FaExclamationTriangle,
-      color: summary.avgDefectRate > 5 ? 'var(--color-danger)' : 'var(--color-warning)',
+      color: (summary?.avgDefectRate || 0) > 5 ? 'var(--color-danger)' : 'var(--color-warning)',
     },
   ];
 
@@ -134,8 +140,8 @@ export default function Dashboard() {
             </div>
             <div className="badge badge-info">LIVE</div>
           </div>
-          <div className="h-64 flex items-center justify-center text-[var(--text-muted)]">
-            [Production Chart]
+          <div className="h-64">
+            <ProductionChart records={production} />
           </div>
         </div>
 
@@ -143,12 +149,12 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-semibold text-[var(--text-primary)]">Efficiency Analysis</h3>
-              <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Department breakdown</p>
+              <p className="text-xs text-[var(--text-tertiary)} mt-0.5">Department breakdown</p>
             </div>
             <div className="badge badge-success">OPTIMAL</div>
           </div>
-          <div className="h-64 flex items-center justify-center text-[var(--text-muted)]">
-            [Efficiency Chart]
+          <div className="h-64">
+            <EfficiencyChart records={production} />
           </div>
         </div>
       </div>
@@ -158,9 +164,12 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">Recent Production Records</h3>
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Latest entries from production database</p>
+            <p className="text-xs text-[var(--text-tertiary)} mt-0.5">Latest entries from production database</p>
           </div>
-          <button className="btn-industrial btn-secondary text-xs">View All</button>
+          <Link href="/production" className="btn-industrial btn-secondary text-xs flex items-center gap-2">
+            <span>View All</span>
+            <FaArrowRight size={10} />
+          </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="table-industrial">
@@ -175,7 +184,7 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {production.map((record, idx) => {
+              {production.slice(0, 10).map((record, idx) => {
                 const efficiency = record.units > 0 ? ((record.units - record.defects) / record.units * 100) : 0;
                 return (
                   <tr key={idx}>
@@ -192,7 +201,7 @@ export default function Dashboard() {
                       </span>
                     </td>
                     <td>
-                      <span className="badge badge-neutral">{record.shift}</span>
+                      <span className="badge badge-neutral text-[10px]">{record.shift}</span>
                     </td>
                     <td>
                       <div className="flex items-center gap-1.5">

@@ -1,243 +1,182 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useDebounce } from '@/lib/hooks/useDebounce';
-import { useEmployees } from '@/lib/hooks/useEmployees';
-import SearchIcon from '@mui/icons-material/Search';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import EmployeeTable from '@/components/employees/EmployeeTable';
-import EditEmployeeModal from '@/components/employees/EditEmployeeModal';
-import DeleteEmployeeModal from '@/components/employees/DeleteEmployeeModal';
-import { FaUsers } from 'react-icons/fa';
+import { FaUsers, FaUserPlus, FaSearch, FaFilter, FaDownload, FaUserTie } from 'react-icons/fa';
+import API from '@/lib/api';
+import Link from 'next/link';
 
-export default function Employees() {
-  /* ── Form state ──────────────────────────────────────────────── */
-  const [name,         setName]         = useState('');
-  const [experience,   setExperience]   = useState('');
-  const [departmentId, setDepartmentId] = useState('');
-  const [employeeCode, setEmployeeCode] = useState('');
-  const [roleId,       setRoleId]       = useState('');
+export default function EmployeesPage() {
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
 
-  /* ── UI state ────────────────────────────────────────────────── */
-  const [search,            setSearch]            = useState('');
-  const [editData,          setEditData]          = useState(null);
-  const [deleteId,          setDeleteId]          = useState(null);
-  const [showDeleteAll,     setShowDeleteAll]     = useState(false);
-  const [file,              setFile]              = useState(null);
-  const [uploading,         setUploading]         = useState(false);
-  const [toast,             setToast]             = useState('');
-  const fileRef = useRef();
+  useEffect(() => {
+    API.get('/employees')
+      .then(res => {
+        setEmployees(res.data || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
-  /* ── Shared hook ─────────────────────────────────────────────── */
-  const {
-    employees, departments, roles, loading,
-    addEmployee, updateEmployee, deleteEmployee, clearAll, uploadCSV,
-  } = useEmployees();
+  const filtered = employees.filter(emp => {
+    const matchesSearch = emp.name.toLowerCase().includes(search.toLowerCase()) ||
+                         emp.employeeCode.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = filter === 'all' || emp.status === filter;
+    return matchesSearch && matchesFilter;
+  });
 
-  /* ── Toast helper ────────────────────────────────────────────── */
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 2500);
+  const stats = {
+    total: employees.length,
+    active: employees.filter(e => e.status === 'ACTIVE').length,
+    onLeave: employees.filter(e => e.status === 'ON_LEAVE').length,
   };
 
-  /* ── Search with debounce ────────────────────────────────────── */
-  const debouncedSearch = useDebounce(search, 250);
-  const filtered = useMemo(() =>
-    employees.filter((e) =>
-      e.name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      e.employeeCode?.toLowerCase().includes(debouncedSearch.toLowerCase())
-    ),
-    [employees, debouncedSearch]
-  );
-
-  /* ── Add ─────────────────────────────────────────────────────── */
-  const handleAdd = async () => {
-    if (!name || !departmentId || !employeeCode || !roleId) {
-      showToast('Fill all required fields');
-      return;
-    }
-    try {
-      await addEmployee({ name, experience: Number(experience), departmentId, employeeCode, roleId });
-      setName(''); setExperience(''); setDepartmentId(''); setEmployeeCode(''); setRoleId('');
-      showToast('Employee added');
-    } catch { showToast('Failed to add employee'); }
-  };
-
-  /* ── Update ──────────────────────────────────────────────────── */
-  const handleUpdate = async () => {
-    try {
-      await updateEmployee(editData.id, editData);
-      setEditData(null);
-      showToast('Updated');
-    } catch { showToast('Update failed'); }
-  };
-
-  /* ── Delete ──────────────────────────────────────────────────── */
-  const confirmDelete = async () => {
-    try {
-      await deleteEmployee(deleteId);
-      setDeleteId(null);
-      showToast('Deleted');
-    } catch { showToast('Delete failed'); }
-  };
-
-  /* ── Clear all ───────────────────────────────────────────────── */
-  const handleClearAll = async () => {
-    try {
-      const res = await clearAll();
-      setShowDeleteAll(false);
-      showToast(`${res.deletedCount ?? 0} employees removed`);
-    } catch { showToast('Bulk delete failed'); }
-  };
-
-  /* ── Upload CSV ──────────────────────────────────────────────── */
-  const handleUploadCSV = async () => {
-    if (!file) { showToast('Select a CSV first'); return; }
-    try {
-      setUploading(true);
-      const res = await uploadCSV(file);
-      setFile(null);
-      if (fileRef.current) fileRef.current.value = '';
-      showToast(`Uploaded ${res.inserted ?? 'employees'}`);
-    } catch { showToast('Upload failed'); }
-    finally { setUploading(false); }
-  };
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="skeleton h-32 mb-4" />
+        <div className="skeleton h-96" />
+      </div>
+    );
+  }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-1">Workforce Management</h1>
+          <p className="text-sm text-[var(--text-secondary)]">Employee records, performance, and resource allocation</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="btn-industrial btn-secondary flex items-center gap-2">
+            <FaDownload size={12} />
+            <span>Export</span>
+          </button>
+          <Link href="/employees/new" className="btn-industrial btn-primary flex items-center gap-2">
+            <FaUserPlus size={12} />
+            <span>Add Employee</span>
+          </Link>
+        </div>
+      </div>
 
-      {/* Page Header */}
-      <div className="ff-page-header">
-        <div className="flex items-center gap-2.5 mb-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.08)', color: '#818cf8' }}>
-            <FaUsers size={13} />
+      {/* Stats */}
+      <div className="grid-industrial-3">
+        <div className="kpi-card">
+          <div className="kpi-label">Total Workforce</div>
+          <div className="kpi-value">{stats.total}</div>
+          <div className="text-xs text-[var(--text-tertiary)] mt-1">Active employees</div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-label">Active Status</div>
+          <div className="kpi-value text-[var(--color-success)]">{stats.active}</div>
+          <div className="text-xs text-[var(--text-tertiary)] mt-1">Currently working</div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-label">On Leave</div>
+          <div className="kpi-value text-[var(--color-warning)]">{stats.onLeave}</div>
+          <div className="text-xs text-[var(--text-tertiary)] mt-1">Temporary absence</div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="industrial-card-elevated p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 relative">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={12} />
+            <input
+              type="text"
+              placeholder="Search by name or employee code..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input-industrial pl-9 w-full"
+            />
           </div>
-          <p className="ff-label">Operations · Workforce</p>
-        </div>
-        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#f0f0f4', letterSpacing: '-0.02em' }}>
-          Workforce Management
-        </h1>
-        <p style={{ fontSize: 12, color: '#54546a', marginTop: 4 }}>
-          Employee records, roles, and department assignments
-        </p>
-      </div>
-
-      {/* Add Employee Form */}
-      <div className="ff-card p-5">
-        <p className="ff-label mb-3">Add Employee</p>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-          <input
-            placeholder="Employee Code"
-            value={employeeCode}
-            onChange={(e) => setEmployeeCode(e.target.value)}
-            className="ff-input"
-          />
-          <input
-            placeholder="Full Name"
-            value={name}
-            onChange={(e) => { if (/^[A-Za-z\s]*$/.test(e.target.value)) setName(e.target.value); }}
-            className="ff-input"
-          />
-          <input
-            type="number" min="0"
-            placeholder="Experience (yrs)"
-            value={experience}
-            onChange={(e) => { if (/^\d*$/.test(e.target.value)) setExperience(e.target.value); }}
-            className="ff-input"
-          />
-          <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="ff-select">
-            <option value="">Department</option>
-            {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-          </select>
-          <select value={roleId} onChange={(e) => setRoleId(e.target.value)} className="ff-select">
-            <option value="">Role</option>
-            {roles.map((r) => <option key={r.id} value={r.id}>{r.title}</option>)}
-          </select>
-          <button onClick={handleAdd} className="ff-btn ff-btn-primary">Add Employee</button>
+          <div className="flex items-center gap-2">
+            <FaFilter className="text-[var(--text-muted)]" size={12} />
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="select-industrial"
+            >
+              <option value="all">All Status</option>
+              <option value="ACTIVE">Active</option>
+              <option value="ON_LEAVE">On Leave</option>
+              <option value="RESIGNED">Resigned</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* Search + Upload toolbar */}
-      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
-        <div className="flex items-center gap-2 flex-1 rounded-xl px-3" style={{ background: '#17171c', border: '1px solid #2c2c38' }}>
-          <SearchIcon style={{ color: '#54546a', fontSize: 18 }} />
-          <input
-            placeholder="Search employees…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ background: 'transparent', border: 'none', outline: 'none', color: '#f0f0f4', fontSize: 13, padding: '10px 0', flex: 1 }}
-          />
+      {/* Employee Table */}
+      <div className="industrial-card-elevated p-5">
+        <div className="overflow-x-auto">
+          <table className="table-industrial">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Code</th>
+                <th>Department</th>
+                <th>Role</th>
+                <th>Experience</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((emp) => (
+                <tr key={emp.id}>
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded bg-[var(--color-info)] flex items-center justify-center text-white text-xs font-bold">
+                        {emp.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                      </div>
+                      <div>
+                        <div className="font-medium text-[var(--text-primary)]">{emp.name}</div>
+                        <div className="text-xs text-[var(--text-tertiary)]">{emp.email || 'No email'}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="font-mono text-xs">{emp.employeeCode}</td>
+                  <td>{emp.department?.name || 'N/A'}</td>
+                  <td>
+                    <div className="flex items-center gap-1.5">
+                      <FaUserTie size={12} className="text-[var(--color-info)]" />
+                      <span>{emp.role?.title || 'N/A'}</span>
+                    </div>
+                  </td>
+                  <td>{emp.experience} years</td>
+                  <td>
+                    <span className={`badge ${
+                      emp.status === 'ACTIVE' ? 'badge-success' :
+                      emp.status === 'ON_LEAVE' ? 'badge-warning' :
+                      'badge-neutral'
+                    }`}>
+                      {emp.status}
+                    </span>
+                  </td>
+                  <td>
+                    <Link
+                      href={`/employees/${emp.id}`}
+                      className="text-xs text-[var(--color-info)] hover:underline"
+                    >
+                      View Details
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <input
-            type="file" ref={fileRef} accept=".csv"
-            onChange={(e) => setFile(e.target.files[0])}
-            style={{ fontSize: 12, color: '#9090a4', cursor: 'pointer', maxWidth: 180 }}
-          />
-          <button onClick={handleUploadCSV} disabled={uploading} className="ff-btn ff-btn-success">
-            {uploading
-              ? <span className="w-3.5 h-3.5 border-2 rounded-full animate-spin" style={{ borderColor: '#10b981', borderTopColor: 'transparent' }} />
-              : <CloudUploadIcon style={{ fontSize: 15 }} />
-            }
-            Upload CSV
-          </button>
-          <button onClick={() => setShowDeleteAll(true)} className="ff-btn ff-btn-danger">
-            <DeleteForeverIcon style={{ fontSize: 15 }} />
-            Clear All
-          </button>
-        </div>
+        {filtered.length === 0 && (
+          <div className="text-center py-12 text-[var(--text-muted)]">
+            No employees found matching your criteria
+          </div>
+        )}
       </div>
-
-      {/* Loading skeleton */}
-      {loading && employees.length === 0 && (
-        <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="ff-skeleton rounded-xl" style={{ height: 44 }} />
-          ))}
-        </div>
-      )}
-
-      {/* Table */}
-      <EmployeeTable employees={filtered} onEdit={setEditData} onDelete={setDeleteId} />
-
-      {/* Edit Modal */}
-      <EditEmployeeModal
-        editData={editData} setEditData={setEditData}
-        departments={departments}
-        onUpdate={handleUpdate} onClose={() => setEditData(null)}
-      />
-
-      {/* Delete Modal */}
-      <DeleteEmployeeModal
-        deleteId={deleteId} onDelete={confirmDelete} onClose={() => setDeleteId(null)}
-      />
-
-      {/* Clear All Modal */}
-      {showDeleteAll && (
-        <div className="ff-modal-backdrop">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="ff-modal"
-          >
-            <h3 style={{ fontSize: 15, fontWeight: 600, color: '#f0f0f4', marginBottom: 10 }}>
-              Confirm Bulk Deletion
-            </h3>
-            <p style={{ fontSize: 13, color: '#9090a4', lineHeight: 1.6, marginBottom: 20 }}>
-              This will permanently delete <strong style={{ color: '#f0f0f4' }}>all employees</strong>.
-              This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setShowDeleteAll(false)} className="ff-btn ff-btn-secondary">Cancel</button>
-              <button onClick={handleClearAll} className="ff-btn ff-btn-danger">Delete All</button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {toast && <div className="ff-toast">{toast}</div>}
-    </motion.div>
+    </div>
   );
 }
