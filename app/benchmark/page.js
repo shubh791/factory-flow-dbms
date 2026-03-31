@@ -38,15 +38,15 @@ const TIMING = [
 ];
 
 const RECOMMENDATION = {
-  useCase: 'Manufacturing ERP & Industrial Analytics',
+  useCase: 'Impact of DBMS on Industrial Performance',
   winner:  'PostgreSQL',
   reasons: [
-    'Best-in-class JOIN performance for multi-table relational schemas',
-    'Full ACID compliance ensures data integrity in production environments',
-    'Advanced window functions enable efficient KPI aggregation',
-    'Strong indexing on date/department columns accelerates dashboards',
-    'Excellent cost-to-performance ratio vs. Oracle for similar workloads',
-    'Native JSON support handles semi-structured sensor data alongside relational data',
+    'Best-in-class JOIN performance across multi-table production, employee, and department schemas',
+    'Full ACID compliance guarantees data integrity when tracking production KPIs and workforce metrics',
+    'Advanced window functions enable efficient aggregation of efficiency, defect-rate, and throughput analytics',
+    'Strong B-tree indexing on date and department columns directly accelerates industrial dashboard queries',
+    'Excellent cost-to-performance ratio — critical for measuring DBMS ROI in industrial deployments',
+    'Proven scalability for time-series production records and relational HR/role data in the same system',
   ],
 };
 
@@ -228,7 +228,7 @@ export default function BenchmarkLab() {
           Database Benchmark Lab
         </h1>
         <p style={{ fontSize: 12, color: '#7878a0', marginTop: 4 }}>
-          PostgreSQL vs MySQL vs MongoDB vs Oracle — performance, consistency & cost analysis for industrial ERP
+          PostgreSQL vs MySQL vs MongoDB vs Oracle — performance, consistency & cost analysis for impact of DBMS on industrial performance
         </p>
       </motion.div>
 
@@ -275,7 +275,7 @@ export default function BenchmarkLab() {
         <div className="rounded-xl overflow-hidden" style={{ background: '#17171c', border: '1px solid #1f1f28' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid #1f1f28' }}>
             <p style={{ fontSize: 13, fontWeight: 600, color: '#f0f0f4' }}>Capability Radar</p>
-            <p style={{ fontSize: 11, color: '#7878a0', marginTop: 2 }}>Multi-dimensional capability comparison</p>
+            <p style={{ fontSize: 11, color: '#7878a0', marginTop: 2 }}>Multi-dimensional capability comparison for industrial data workloads</p>
           </div>
           <div className="p-5">
             <BaseChart option={radarOption} height="320px" />
@@ -388,7 +388,7 @@ export default function BenchmarkLab() {
                 <span style={{ fontSize: 15, fontWeight: 700, color: '#818cf8' }}>{RECOMMENDATION.winner}</span>
               </div>
               <p style={{ fontSize: 13, color: '#7878a0' }}>
-                recommended as primary DBMS for manufacturing ERP systems
+                recommended as primary DBMS for studying impact on industrial performance
               </p>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">

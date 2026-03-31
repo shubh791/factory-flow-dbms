@@ -41,60 +41,108 @@ function PillarBar({ title, value, color }) {
   );
 }
 
+/* ── Safe text — never renders raw JSON objects ──────────────────── */
+function safeStr(val) {
+  if (val == null) return null;
+  if (typeof val === 'object') return null; // skip JSON blobs
+  const s = String(val).trim();
+  // If the string looks like JSON, skip it
+  if ((s.startsWith('{') && s.endsWith('}')) || (s.startsWith('[') && s.endsWith(']'))) return null;
+  return s;
+}
+
 /* ── Prediction card ─────────────────────────────────────────────── */
 function PredictionContent({ data }) {
-  const { prediction, monthlyTrend } = data;
-  if (!prediction) return <p style={{ fontSize: 12, color: '#54546a' }}>No prediction data available.</p>;
+  const { prediction, monthlyTrend, dataPoints } = data;
 
-  const trendColor = prediction.trend === 'increasing' ? '#10b981'
-    : prediction.trend === 'declining' ? '#f43f5e' : '#f59e0b';
-  const TrendIcon = prediction.trend === 'increasing' ? FaArrowUp
-    : prediction.trend === 'declining' ? FaArrowDown : FaMinus;
+  if (!prediction || typeof prediction !== 'object') {
+    return <p style={{ fontSize: 12, color: '#54546a' }}>No prediction data available.</p>;
+  }
+
+  const trendRaw  = safeStr(prediction.trend) ?? 'stable';
+  const trendColor = trendRaw === 'increasing' ? '#10b981' : trendRaw === 'declining' ? '#f43f5e' : '#f59e0b';
+  const TrendIcon  = trendRaw === 'increasing' ? FaArrowUp : trendRaw === 'declining' ? FaArrowDown : FaMinus;
+
+  const stats = [
+    { label: 'Predicted Units',      value: prediction.predictedUnits != null ? Number(prediction.predictedUnits).toLocaleString() : null, color: '#818cf8' },
+    { label: 'Predicted Defects',    value: prediction.predictedDefects != null ? Number(prediction.predictedDefects).toLocaleString() : null, color: '#f43f5e' },
+    { label: 'Predicted Efficiency', value: prediction.predictedEfficiency != null ? `${prediction.predictedEfficiency}%` : null, color: '#10b981' },
+  ].filter(s => s.value != null);
+
+  const reasoning = safeStr(prediction.reasoning) || safeStr(prediction.analysis) || safeStr(prediction.summary);
 
   return (
     <div className="space-y-4">
-      {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: 'Predicted Units',      value: prediction.predictedUnits?.toLocaleString() ?? '—', color: '#818cf8' },
-          { label: 'Predicted Defects',    value: prediction.predictedDefects?.toLocaleString() ?? '—', color: '#f43f5e' },
-          { label: 'Predicted Efficiency', value: prediction.predictedEfficiency != null ? `${prediction.predictedEfficiency}%` : '—', color: '#10b981' },
-        ].map((s) => (
-          <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid #1f1f28' }}>
-            <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.09em', color: '#54546a', fontWeight: 600, marginBottom: 4 }}>{s.label}</p>
-            <p style={{ fontSize: 18, fontWeight: 700, color: s.color, fontFamily: 'JetBrains Mono, monospace' }}>{s.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Trend + confidence */}
+      {/* Trend + confidence badges */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: `${trendColor}14`, border: `1px solid ${trendColor}28` }}>
           <TrendIcon size={9} style={{ color: trendColor }} />
           <span style={{ fontSize: 11, fontWeight: 700, color: trendColor, textTransform: 'capitalize' }}>
-            {prediction.trend ?? 'unknown'} trend
+            {trendRaw} trend
           </span>
         </div>
         {prediction.confidence != null && (
-          <div className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)' }}>
+          <div className="rounded-full px-3 py-1.5" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)' }}>
             <span style={{ fontSize: 11, color: '#818cf8' }}>Confidence: {prediction.confidence}%</span>
           </div>
         )}
+        {dataPoints != null && (
+          <span style={{ fontSize: 10, color: '#3a3a5a' }}>{dataPoints} records analysed</span>
+        )}
       </div>
 
-      {/* Reasoning */}
-      {prediction.reasoning && (
-        <div className="rounded-lg px-4 py-3" style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.12)' }}>
-          <p style={{ fontSize: 12, color: '#9090a4', lineHeight: 1.7, fontStyle: 'italic' }}>
-            "{prediction.reasoning}"
-          </p>
+      {/* Predicted stats grid */}
+      {stats.length > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          {stats.map((s) => (
+            <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid #1f1f28' }}>
+              <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.09em', color: '#54546a', fontWeight: 600, marginBottom: 4 }}>{s.label}</p>
+              <p style={{ fontSize: 20, fontWeight: 700, color: s.color, fontFamily: 'JetBrains Mono, monospace' }}>{s.value}</p>
+            </div>
+          ))}
         </div>
       )}
 
+      {/* AI reasoning text */}
+      {reasoning && (
+        <div className="rounded-lg px-4 py-3" style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.12)' }}>
+          <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6366f1', fontWeight: 600, marginBottom: 6 }}>AI Reasoning</p>
+          <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.75 }}>{reasoning}</p>
+        </div>
+      )}
+
+      {/* Monthly trend mini-table */}
       {monthlyTrend?.length > 0 && (
-        <p style={{ fontSize: 10, color: '#3a3a5a' }}>
-          Based on {monthlyTrend.length} months of historical data ({data.dataPoints} records)
-        </p>
+        <div>
+          <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600, marginBottom: 8 }}>
+            Historical Trend ({monthlyTrend.length} months)
+          </p>
+          <div className="overflow-x-auto rounded-lg" style={{ border: '1px solid #1f1f28' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+              <thead>
+                <tr style={{ background: '#0c0c0f', borderBottom: '1px solid #2c2c38' }}>
+                  {['Month', 'Units', 'Defects', 'Efficiency'].map(h => (
+                    <th key={h} style={{ padding: '7px 12px', textAlign: h === 'Month' ? 'left' : 'right', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyTrend.map((row, i) => {
+                  const eff = row.units > 0 ? (((row.units - row.defects) / row.units) * 100).toFixed(1) : '—';
+                  const effColor = row.units > 0 ? (parseFloat(eff) >= 95 ? '#10b981' : parseFloat(eff) >= 85 ? '#f59e0b' : '#f43f5e') : '#54546a';
+                  return (
+                    <tr key={i} style={{ borderBottom: i < monthlyTrend.length - 1 ? '1px solid #1f1f28' : 'none' }}>
+                      <td style={{ padding: '7px 12px', color: '#9090a4', fontFamily: 'JetBrains Mono, monospace' }}>{row.month}</td>
+                      <td style={{ padding: '7px 12px', textAlign: 'right', color: '#f0f0f4', fontFamily: 'JetBrains Mono, monospace' }}>{row.units?.toLocaleString()}</td>
+                      <td style={{ padding: '7px 12px', textAlign: 'right', color: row.defects > 0 ? '#f43f5e' : '#54546a', fontFamily: 'JetBrains Mono, monospace' }}>{row.defects}</td>
+                      <td style={{ padding: '7px 12px', textAlign: 'right', color: effColor, fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{eff}{eff !== '—' ? '%' : ''}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -111,27 +159,39 @@ function AnomalyContent({ data }) {
     critical: '#f43f5e',
   }[riskLevel?.toLowerCase()] ?? '#9090a4';
 
+  const summaryText = safeStr(summary);
+
   return (
     <div className="space-y-4">
-      {/* Risk level + baseline */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="rounded-full px-3 py-1.5" style={{ background: `${riskColor}14`, border: `1px solid ${riskColor}28` }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: riskColor, textTransform: 'capitalize' }}>
-            {riskLevel ?? 'unknown'} risk
-          </span>
+      {/* Risk level + baseline stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="rounded-xl p-3 text-center col-span-2 sm:col-span-1" style={{ background: `${riskColor}0d`, border: `1px solid ${riskColor}28` }}>
+          <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600, marginBottom: 4 }}>Risk Level</p>
+          <p style={{ fontSize: 16, fontWeight: 700, color: riskColor, textTransform: 'capitalize' }}>{riskLevel ?? 'Unknown'}</p>
         </div>
         {baseline && (
-          <span style={{ fontSize: 10, color: '#54546a' }}>
-            Avg defect rate: {baseline.avgDefectRate}% ± {baseline.stdDeviation}%
-            · {baseline.recordsAnalysed} records analysed
-          </span>
+          <>
+            <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid #1f1f28' }}>
+              <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600, marginBottom: 4 }}>Avg Defect Rate</p>
+              <p style={{ fontSize: 16, fontWeight: 700, color: '#f43f5e', fontFamily: 'JetBrains Mono, monospace' }}>{baseline.avgDefectRate}%</p>
+            </div>
+            <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid #1f1f28' }}>
+              <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600, marginBottom: 4 }}>Std Deviation</p>
+              <p style={{ fontSize: 16, fontWeight: 700, color: '#f59e0b', fontFamily: 'JetBrains Mono, monospace' }}>±{baseline.stdDeviation}%</p>
+            </div>
+            <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid #1f1f28' }}>
+              <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600, marginBottom: 4 }}>Records</p>
+              <p style={{ fontSize: 16, fontWeight: 700, color: '#818cf8', fontFamily: 'JetBrains Mono, monospace' }}>{baseline.recordsAnalysed}</p>
+            </div>
+          </>
         )}
       </div>
 
       {/* Summary */}
-      {summary && (
+      {summaryText && (
         <div className="rounded-lg px-4 py-3" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid #1f1f28' }}>
-          <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.7 }}>{summary}</p>
+          <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600, marginBottom: 6 }}>Analysis Summary</p>
+          <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.75 }}>{summaryText}</p>
         </div>
       )}
 
@@ -139,19 +199,23 @@ function AnomalyContent({ data }) {
       {anomalies.length > 0 ? (
         <div className="space-y-2">
           <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.09em', color: '#54546a', fontWeight: 600 }}>
-            Detected anomalies ({anomalies.length})
+            Detected Anomalies — {anomalies.length} found
           </p>
           {anomalies.map((a, i) => {
             const sevColor = a.severity === 'high' ? '#f43f5e' : a.severity === 'medium' ? '#f59e0b' : '#10b981';
+            const detail   = safeStr(a.detail) || safeStr(a.description) || safeStr(a.reason) || 'Anomaly detected';
+            const dateStr  = safeStr(a.date) || safeStr(a.timestamp) || '';
             return (
-              <div key={i} className="flex items-start gap-3 rounded-lg px-3 py-2.5" style={{ background: 'rgba(0,0,0,0.15)', border: '1px solid #1f1f28' }}>
-                <span className="rounded-full px-2 py-0.5 flex-shrink-0 mt-0.5" style={{ fontSize: 9, fontWeight: 700, background: `${sevColor}14`, color: sevColor }}>
-                  {a.severity?.toUpperCase()}
-                </span>
-                <div>
-                  <p style={{ fontSize: 11, fontWeight: 600, color: '#f0f0f4', fontFamily: 'JetBrains Mono, monospace' }}>{a.date}</p>
-                  <p style={{ fontSize: 12, color: '#9090a4', marginTop: 2 }}>{a.detail}</p>
+              <div key={i} className="rounded-lg p-3" style={{ background: 'rgba(0,0,0,0.15)', border: `1px solid ${sevColor}20` }}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="rounded px-2 py-0.5 flex-shrink-0" style={{ fontSize: 9, fontWeight: 700, background: `${sevColor}18`, color: sevColor, letterSpacing: '0.06em' }}>
+                    {a.severity?.toUpperCase() ?? 'ANOMALY'}
+                  </span>
+                  {dateStr && (
+                    <span style={{ fontSize: 10, color: '#54546a', fontFamily: 'JetBrains Mono, monospace' }}>{dateStr}</span>
+                  )}
                 </div>
+                <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.65 }}>{detail}</p>
               </div>
             );
           })}

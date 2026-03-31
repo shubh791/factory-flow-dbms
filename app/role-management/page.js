@@ -73,7 +73,7 @@ export default function RoleManagementPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-1">Role Management</h1>
-          <p className="text-sm text-[var(--text-secondary)]">Organizational hierarchy and position definitions</p>
+          <p className="text-sm text-[var(--text-secondary)]">Organizational hierarchy — Level 1 = Entry, higher level = more senior</p>
         </div>
         <button onClick={() => setShowModal(true)} className="btn-industrial btn-primary flex items-center gap-2">
           <FaPlus size={12} />
@@ -82,7 +82,7 @@ export default function RoleManagementPage() {
       </div>
 
       <div className="industrial-card-elevated p-6">
-        <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Role Hierarchy (Level 1 = Top)</h3>
+        <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Role Hierarchy (Level 1 = Entry · Higher = Senior)</h3>
         <div className="space-y-3">
           {roles.map((role) => {
             const empCount = getRoleEmployeeCount(role.id);
@@ -169,7 +169,7 @@ export default function RoleManagementPage() {
 
               <div>
                 <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-                  Hierarchy Level * (1 = Highest)
+                  Hierarchy Level * (1 = Entry, higher = more senior)
                 </label>
                 <input
                   type="number"
@@ -179,10 +179,10 @@ export default function RoleManagementPage() {
                   value={formData.level}
                   onChange={(e) => setFormData({ ...formData, level: e.target.value })}
                   className="input-industrial"
-                  placeholder="e.g., 1"
+                  placeholder="e.g., 4"
                 />
                 <div className="text-xs text-[var(--text-tertiary)] mt-1">
-                  Lower numbers = Higher authority. Level 1 is top management.
+                  Level 1 = entry-level. Higher numbers = more authority. Promotions move employees to higher levels.
                 </div>
               </div>
 

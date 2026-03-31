@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 export async function GET(request) {
   try {
     const roles = await prisma.role.findMany({
-      orderBy: { level: 'asc' },
+      orderBy: { level: 'desc' },
     });
     return NextResponse.json(roles);
   } catch (error) {

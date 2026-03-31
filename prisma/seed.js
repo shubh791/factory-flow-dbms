@@ -27,17 +27,17 @@ async function main() {
   });
 
   // Seed Roles
-  const roleManager = await prisma.role.create({
-    data: { title: 'Manager', level: 1, description: 'Department management' },
-  });
-  const roleSupervisor = await prisma.role.create({
-    data: { title: 'Supervisor', level: 2, description: 'Team supervision' },
+  const roleTechnician = await prisma.role.create({
+    data: { title: 'Technician', level: 1, description: 'Entry-level technical work' },
   });
   const roleOperator = await prisma.role.create({
-    data: { title: 'Operator', level: 3, description: 'Machine operation' },
+    data: { title: 'Operator', level: 2, description: 'Machine operation' },
   });
-  const roleTechnician = await prisma.role.create({
-    data: { title: 'Technician', level: 3, description: 'Technical work' },
+  const roleSupervisor = await prisma.role.create({
+    data: { title: 'Supervisor', level: 3, description: 'Team supervision' },
+  });
+  const roleManager = await prisma.role.create({
+    data: { title: 'Manager', level: 4, description: 'Department management' },
   });
 
   // Seed Employees

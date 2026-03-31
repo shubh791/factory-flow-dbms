@@ -39,7 +39,7 @@ export default function PromotionManagement() {
 
   const selectedEmployee = employees.find(e => e.id === Number(formData.employeeId));
   const currentRole = selectedEmployee?.role;
-  const availableRoles = roles.filter(r => currentRole && r.level < currentRole.level);
+  const availableRoles = roles.filter(r => currentRole && r.level > currentRole.level);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -207,7 +207,7 @@ export default function PromotionManagement() {
                     </select>
                     {availableRoles.length === 0 && (
                       <div className="text-xs text-[var(--color-warning)] mt-1">
-                        This employee is already at the highest role level
+                        No higher-level roles available for promotion
                       </div>
                     )}
                   </div>
