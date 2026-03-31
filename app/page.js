@@ -132,31 +132,8 @@ export default function Dashboard() {
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="industrial-card-elevated p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">Production Trend</h3>
-              <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Last 30 days performance</p>
-            </div>
-            <div className="badge badge-info">LIVE</div>
-          </div>
-          <div className="h-64">
-            <ProductionChart records={production} />
-          </div>
-        </div>
-
-        <div className="industrial-card-elevated p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">Efficiency Analysis</h3>
-              <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Department breakdown</p>
-            </div>
-            <div className="badge badge-success">OPTIMAL</div>
-          </div>
-          <div className="h-64">
-            <EfficiencyChart records={production} />
-          </div>
-        </div>
+        <ProductionChart records={production} />
+        <EfficiencyChart records={production} />
       </div>
 
       {/* Recent Production Table */}

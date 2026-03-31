@@ -9,22 +9,13 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaBrain, FaPaperPlane, FaTrash, FaCircle } from 'react-icons/fa';
-import ReactMarkdown from 'react-markdown';
 
-// Fallback if react-markdown is not installed — render plain text
 function SafeMarkdown({ children }) {
-  try {
-    // Try to dynamically use ReactMarkdown (it may not be installed)
-    return (
-      <div
-        style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}
-      >
-        {children}
-      </div>
-    );
-  } catch {
-    return <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.75 }}>{children}</p>;
-  }
+  return (
+    <div style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
+      {children}
+    </div>
+  );
 }
 
 export default function AskAIChat({ defaultOpen = false }) {

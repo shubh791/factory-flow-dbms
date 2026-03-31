@@ -32,3 +32,11 @@ Thumbs.db
 
 # Production
 *.log
+
+# External tooling / CI artifacts
+.emergent/
+test_reports/
+test_result.md
+
+# Portfolio zips
+public/*.zip
