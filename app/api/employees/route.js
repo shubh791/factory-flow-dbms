@@ -34,7 +34,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, experience, departmentId, roleId, employeeCode } = body;
+    const { name, experience, departmentId, roleId, employeeCode, email, phone } = body;
 
     if (!name || !employeeCode || !departmentId || !roleId) {
       return NextResponse.json(
@@ -57,6 +57,8 @@ export async function POST(request) {
         experience: Number(experience) || 0,
         departmentId: Number(departmentId),
         roleId: Number(roleId),
+        ...(email && { email: email.trim() }),
+        ...(phone && { phone: phone.trim() }),
       },
     });
 

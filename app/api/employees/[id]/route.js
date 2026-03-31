@@ -29,7 +29,7 @@ export async function PATCH(request, { params }) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, experience, departmentId, roleId } = body;
+    const { name, experience, departmentId, roleId, email, phone } = body;
 
     const updated = await prisma.employee.update({
       where: { id: Number(id) },
@@ -38,6 +38,8 @@ export async function PATCH(request, { params }) {
         ...(experience !== undefined && { experience: Number(experience) }),
         ...(departmentId && { departmentId: Number(departmentId) }),
         ...(roleId && { roleId: Number(roleId) }),
+        ...(email !== undefined && { email: email ? email.trim() : null }),
+        ...(phone !== undefined && { phone: phone ? phone.trim() : null }),
       },
     });
 

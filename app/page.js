@@ -149,7 +149,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-semibold text-[var(--text-primary)]">Efficiency Analysis</h3>
-              <p className="text-xs text-[var(--text-tertiary)} mt-0.5">Department breakdown</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Department breakdown</p>
             </div>
             <div className="badge badge-success">OPTIMAL</div>
           </div>
@@ -164,7 +164,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">Recent Production Records</h3>
-            <p className="text-xs text-[var(--text-tertiary)} mt-0.5">Latest entries from production database</p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Latest entries from production database</p>
           </div>
           <Link href="/production" className="btn-industrial btn-secondary text-xs flex items-center gap-2">
             <span>View All</span>

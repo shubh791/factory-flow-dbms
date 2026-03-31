@@ -11,6 +11,7 @@ export async function GET(request) {
         id: true,
         units: true,
         defects: true,
+        shift: true,
         revenue: true,
         cost: true,
         profit: true,

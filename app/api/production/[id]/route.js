@@ -29,7 +29,7 @@ export async function PATCH(request, { params }) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { units, defects, productId, employeeId } = body;
+    const { units, defects, productId, employeeId, shift } = body;
 
     const existing = await prisma.production.findUnique({
       where: { id: Number(id) },
@@ -74,6 +74,7 @@ export async function PATCH(request, { params }) {
         defects: newDefects,
         ...(productId && { productId: newProductId }),
         ...(employeeId && { employeeId: Number(employeeId) }),
+        ...(shift && { shift }),
         revenue,
         cost,
         profit,
