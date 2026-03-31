@@ -41,14 +41,20 @@ function PillarBar({ title, value, color }) {
   );
 }
 
-/* ── Safe text — never renders raw JSON objects ──────────────────── */
+/* ── Safe text — strips all embedded JSON, code fences, raw objects ─ */
 function safeStr(val) {
   if (val == null) return null;
-  if (typeof val === 'object') return null; // skip JSON blobs
-  const s = String(val).trim();
-  // If the string looks like JSON, skip it
-  if ((s.startsWith('{') && s.endsWith('}')) || (s.startsWith('[') && s.endsWith(']'))) return null;
-  return s;
+  if (typeof val === 'object') return null;
+  let s = String(val).trim();
+  // Remove markdown code fences
+  s = s.replace(/```[\s\S]*?```/g, '').trim();
+  // Remove entire JSON object/array blocks (including multiline)
+  s = s.replace(/\{[\s\S]*?\}/g, '').replace(/\[[\s\S]*?\]/g, '').trim();
+  // Remove any leftover key-value fragments like "key": "value"
+  s = s.replace(/"[^"]+"\s*:\s*"[^"]*"/g, '').replace(/"[^"]+"\s*:\s*[\d.]+/g, '').trim();
+  // Collapse multiple newlines/spaces
+  s = s.replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();
+  return s.length > 5 ? s : null;
 }
 
 /* ── Prediction card ─────────────────────────────────────────────── */
@@ -297,6 +303,12 @@ export default function DecisionSupport() {
         </p>
       </motion.div>
 
+      {/* ── Executive AI Assistant — TOP ─────────────────────────────── */}
+      <motion.div variants={fadeUp}>
+        <p className="ff-label mb-3">Executive AI Assistant</p>
+        <AskAIChat defaultOpen large />
+      </motion.div>
+
       {/* IPI Gauge + Pillars */}
       <motion.div variants={fadeUp} className="grid md:grid-cols-2 gap-5">
 
@@ -368,12 +380,6 @@ export default function DecisionSupport() {
           autoFetch
           renderContent={(data) => <AnomalyContent data={data} />}
         />
-      </motion.div>
-
-      {/* Ask FactoryFlow AI */}
-      <motion.div variants={fadeUp}>
-        <p className="ff-label mb-3">Executive AI Assistant</p>
-        <AskAIChat defaultOpen={false} />
       </motion.div>
 
     </motion.div>

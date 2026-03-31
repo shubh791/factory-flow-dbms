@@ -10,15 +10,15 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaBrain, FaPaperPlane, FaTrash, FaCircle } from 'react-icons/fa';
 
-function SafeMarkdown({ children }) {
+function SafeMarkdown({ children, large }) {
   return (
-    <div style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
+    <div style={{ fontSize: large ? 13.5 : 12.5, color: '#9090a4', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
       {children}
     </div>
   );
 }
 
-export default function AskAIChat({ defaultOpen = false }) {
+export default function AskAIChat({ defaultOpen = false, large = false }) {
   const [open,     setOpen]     = useState(defaultOpen);
   const [messages, setMessages] = useState([
     { role: 'assistant', content: 'Hello! I\'m FactoryFlow AI. Ask me anything about your production data, KPIs, or operational performance.' },
@@ -120,7 +120,7 @@ export default function AskAIChat({ defaultOpen = false }) {
   };
 
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: '#17171c', border: '1px solid #1f1f28' }}>
+    <div className="rounded-xl overflow-hidden" style={{ background: '#17171c', border: large ? '1px solid rgba(168,85,247,0.25)' : '1px solid #1f1f28' }}>
 
       {/* ── Panel header ──────────────────────────────────────── */}
       <button
@@ -130,12 +130,12 @@ export default function AskAIChat({ defaultOpen = false }) {
       >
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(168,85,247,0.08)', color: '#a855f7' }}>
-            <FaBrain size={13} />
+            <FaBrain size={large ? 15 : 13} />
           </div>
           <div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#f0f0f4' }}>Ask FactoryFlow AI</p>
-            <p style={{ fontSize: 11, color: '#54546a', marginTop: 1 }}>
-              Streaming industrial intelligence · Context-aware
+            <p style={{ fontSize: large ? 15 : 13, fontWeight: 600, color: '#f0f0f4' }}>Ask FactoryFlow AI</p>
+            <p style={{ fontSize: large ? 12 : 11, color: '#54546a', marginTop: 1 }}>
+              {large ? 'Executive AI Assistant · Ask anything about your industrial data' : 'Streaming industrial intelligence · Context-aware'}
             </p>
           </div>
         </div>
@@ -166,7 +166,7 @@ export default function AskAIChat({ defaultOpen = false }) {
             {/* Messages */}
             <div
               className="overflow-y-auto px-4 py-3 space-y-3"
-              style={{ maxHeight: 340, minHeight: 120 }}
+              style={{ maxHeight: large ? 520 : 340, minHeight: large ? 200 : 120 }}
             >
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -178,7 +178,7 @@ export default function AskAIChat({ defaultOpen = false }) {
                       borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
                     }}
                   >
-                    <SafeMarkdown>{msg.content}</SafeMarkdown>
+                    <SafeMarkdown large={large}>{msg.content}</SafeMarkdown>
                     {msg._streaming && (
                       <span
                         style={{
@@ -219,8 +219,8 @@ export default function AskAIChat({ defaultOpen = false }) {
                 placeholder="Ask about production, defects, workforce…"
                 style={{
                   flex: 1, resize: 'none', background: '#0c0c0f', border: '1px solid #2c2c38',
-                  borderRadius: 10, padding: '9px 12px', fontSize: 12.5, color: '#f0f0f4',
-                  outline: 'none', lineHeight: 1.5, maxHeight: 80, overflowY: 'auto',
+                  borderRadius: 10, padding: large ? '11px 14px' : '9px 12px', fontSize: large ? 13.5 : 12.5, color: '#f0f0f4',
+                  outline: 'none', lineHeight: 1.5, maxHeight: large ? 120 : 80, overflowY: 'auto',
                   transition: 'border-color 150ms',
                 }}
                 onFocus={(e) => { e.target.style.borderColor = '#6366f1'; }}
