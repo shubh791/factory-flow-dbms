@@ -5,20 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Synopsis – FactoryFlow DBMS | Group G19 | PIET</title>
   <style>
-    /* ============================================================
-       GLOBAL RESET & BASE
-    ============================================================ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --primary:   #1e3a8a;   /* indigo-900  */
-      --accent:    #2563eb;   /* blue-600    */
-      --accent-lt: #3b82f6;   /* blue-500    */
-      --muted:     #475569;   /* slate-600   */
-      --border:    #cbd5e1;   /* slate-300   */
-      --bg-head:   #eff6ff;   /* blue-50     */
-      --bg-alt:    #f8fafc;   /* slate-50    */
-      --text:      #1e293b;   /* slate-800   */
+      --primary:   #1e3a8a;
+      --accent:    #2563eb;
+      --accent-lt: #3b82f6;
+      --muted:     #475569;
+      --border:    #cbd5e1;
+      --bg-head:   #eff6ff;
+      --bg-alt:    #f8fafc;
+      --text:      #1e293b;
     }
 
     body {
@@ -29,9 +26,6 @@
       line-height: 1.75;
     }
 
-    /* ============================================================
-       PAGE CONTAINER
-    ============================================================ */
     .page {
       width: 800px;
       min-height: 1100px;
@@ -43,9 +37,6 @@
       border-top: 5px solid var(--primary);
     }
 
-    /* ============================================================
-       TYPOGRAPHY
-    ============================================================ */
     h1, h2, h3, h4 {
       font-family: 'Georgia', serif;
       color: var(--primary);
@@ -63,9 +54,6 @@
     strong { color: var(--primary); }
     em     { color: var(--muted); }
 
-    /* ============================================================
-       PAGE NUMBERS (footer)
-    ============================================================ */
     .page-num {
       position: absolute;
       bottom: 22px;
@@ -83,9 +71,6 @@
       border-top: 1px solid var(--border);
     }
 
-    /* ============================================================
-       COLLEGE LOGO / BADGE
-    ============================================================ */
     .logo-circle {
       width: 90px;
       height: 90px;
@@ -105,9 +90,7 @@
       letter-spacing: 1px;
     }
 
-    /* ============================================================
-       TITLE PAGE (PAGE 1)
-    ============================================================ */
+    /* PAGE 1 */
     .title-page {
       display: flex;
       flex-direction: column;
@@ -185,9 +168,7 @@
       margin-top: 6px;
     }
 
-    /* ============================================================
-       TABLE OF CONTENTS
-    ============================================================ */
+    /* PAGE 2 – TOC */
     .toc-item {
       display: flex;
       justify-content: space-between;
@@ -198,7 +179,6 @@
     }
     .toc-item:last-child { border-bottom: none; }
     .toc-item .toc-pg { color: var(--accent); font-weight: 700; }
-    .toc-section { margin-bottom: 6px; }
     .toc-section-header {
       font-size: 10.5pt;
       text-transform: uppercase;
@@ -209,9 +189,7 @@
       margin: 18px 0 6px 0;
     }
 
-    /* ============================================================
-       ABSTRACT PAGE ELEMENTS
-    ============================================================ */
+    /* SHARED COMPONENTS */
     .keywords-box {
       background: var(--bg-head);
       border-left: 4px solid var(--accent);
@@ -223,9 +201,6 @@
     }
     .keywords-box strong { color: var(--primary); }
 
-    /* ============================================================
-       CONTENT PAGES – SHARED COMPONENTS
-    ============================================================ */
     .section-number {
       display: inline-block;
       background: var(--accent);
@@ -310,11 +285,7 @@
       font-weight: 700;
       color: var(--primary);
     }
-    .arch-arrow {
-      font-size: 18pt;
-      color: var(--accent);
-      line-height: 1;
-    }
+    .arch-arrow { font-size: 18pt; color: var(--accent); line-height: 1; }
 
     .module-block {
       border-left: 4px solid var(--accent);
@@ -371,9 +342,6 @@
       margin: 18px 0;
     }
 
-    /* ============================================================
-       PRINT STYLESHEET
-    ============================================================ */
     @media print {
       body { background: #fff; font-size: 11pt; }
       .page {
@@ -388,9 +356,7 @@
       .page:last-child { page-break-after: auto; }
       .page-num, .page-footer-line { display: none; }
       h2 { font-size: 13pt; }
-      .sdg-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .logo-circle { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      table.data-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .sdg-badge, .logo-circle, table.data-table th,
       .module-block, .info-card, .keywords-box, .highlight-box {
         -webkit-print-color-adjust: exact; print-color-adjust: exact;
       }
@@ -399,16 +365,14 @@
 </head>
 <body>
 
-<!-- ============================================================
-     PAGE 1 — TITLE PAGE
-============================================================ -->
+<!-- PAGE 1 — TITLE PAGE (exact match to G19 format) -->
 <div class="page" id="page-1">
   <div class="title-page">
 
     <div class="logo-circle"><span>PIET</span></div>
 
     <div class="college-name">Panipat Institute of Engineering &amp; Technology</div>
-    <div class="college-sub">Samalkha, Panipat, Haryana – 132101 | Affiliated to Kurukshetra University</div>
+    <div class="college-sub">Samalkha, Panipat, Haryana – 132101 &nbsp;|&nbsp; Affiliated to Kurukshetra University</div>
 
     <div class="dept-banner">Department of Computer Science &amp; Engineering (CSE)</div>
 
@@ -432,11 +396,11 @@
         <td>Kartik &nbsp;&nbsp;<em>Enrollment: 2822530</em></td>
       </tr>
       <tr>
-        <td>Student 3</td>
+        <td>Student 2</td>
         <td>Sushant &nbsp;&nbsp;<em>Enrollment: 2822532</em></td>
       </tr>
       <tr>
-        <td>Student 4</td>
+        <td>Student 3</td>
         <td>Shubham Pangal &nbsp;&nbsp;<em>Enrollment: 2822512</em></td>
       </tr>
       <tr>
@@ -453,9 +417,7 @@
 </div>
 
 
-<!-- ============================================================
-     PAGE 2 — ABSTRACT / INTRODUCTION + TABLE OF CONTENTS
-============================================================ -->
+<!-- PAGE 2 — ABSTRACT + TABLE OF CONTENTS -->
 <div class="page" id="page-2">
 
   <h2><span class="section-number">§1</span> Abstract &amp; Introduction</h2>
@@ -481,75 +443,46 @@
     performance management system built to practically demonstrate the measurable impact
     of DBMS adoption on organizational performance. The system integrates a relational
     PostgreSQL database, a modern Next.js web interface, and an Artificial Intelligence
-    analytics layer powered by Groq's LLM API. It covers production tracking, employee
-    lifecycle management, automated reporting, and AI-driven insights — addressing the
-    complete operational data lifecycle of an industrial facility.
+    analytics layer powered by Groq's LLM API (<em>llama-3.3-70b-versatile</em>). It covers
+    production tracking, employee lifecycle management, automated reporting, and AI-driven
+    natural language CRUD — addressing the complete operational data lifecycle of an
+    industrial facility with real-time updates and zero-refresh UI.
   </p>
 
   <div class="keywords-box">
     <strong>Keywords:</strong>&nbsp;
     DBMS, Industrial Performance, PostgreSQL, AI Analytics, Real-time Systems,
-    FactoryFlow, Next.js, Prisma ORM, Groq LLM, Production KPIs, Workforce Management
+    FactoryFlow, Next.js, Prisma ORM, Groq LLM, Production KPIs, Workforce Management,
+    Natural Language CRUD, Executive Dashboard
   </div>
 
   <h2 style="margin-top:28px;"><span class="section-number">TOC</span> Table of Contents</h2>
 
-  <div class="toc-section-header">Preserved Sections</div>
+  <div class="toc-section-header">Front Matter</div>
+  <div class="toc-item"><span>§1 &nbsp; Abstract &amp; Introduction</span><span class="toc-pg">2</span></div>
 
-  <div class="toc-item">
-    <span>§1 &nbsp; Abstract &amp; Introduction</span>
-    <span class="toc-pg">2</span>
-  </div>
-
-  <div class="toc-section-header">FactoryFlow DBMS – New Content</div>
-
-  <div class="toc-item">
-    <span>§2 &nbsp; Objectives of the Project</span>
-    <span class="toc-pg">3</span>
-  </div>
-  <div class="toc-item">
-    <span>§3 &nbsp; System Architecture &amp; Methodology</span>
-    <span class="toc-pg">4</span>
-  </div>
-  <div class="toc-item">
-    <span>§4 &nbsp; Database Design</span>
-    <span class="toc-pg">5</span>
-  </div>
-  <div class="toc-item">
-    <span>§5 &nbsp; Modules Implemented</span>
-    <span class="toc-pg">6</span>
-  </div>
-  <div class="toc-item">
-    <span>§6 &nbsp; Hardware &amp; Software Requirements</span>
-    <span class="toc-pg">7</span>
-  </div>
-  <div class="toc-item">
-    <span>§7 &nbsp; Limitations</span>
-    <span class="toc-pg">8</span>
-  </div>
-  <div class="toc-item">
-    <span>§8 &nbsp; Future Scope</span>
-    <span class="toc-pg">9</span>
-  </div>
-  <div class="toc-item">
-    <span>§9 &nbsp; SDG Goals &amp; Conclusion</span>
-    <span class="toc-pg">10</span>
-  </div>
+  <div class="toc-section-header">FactoryFlow DBMS – Core Content</div>
+  <div class="toc-item"><span>§2 &nbsp; Objectives of the Project</span><span class="toc-pg">3</span></div>
+  <div class="toc-item"><span>§3 &nbsp; System Architecture &amp; Methodology</span><span class="toc-pg">4</span></div>
+  <div class="toc-item"><span>§4 &nbsp; Database Design</span><span class="toc-pg">5</span></div>
+  <div class="toc-item"><span>§5 &nbsp; Modules Implemented</span><span class="toc-pg">6</span></div>
+  <div class="toc-item"><span>§6 &nbsp; Hardware &amp; Software Requirements</span><span class="toc-pg">7</span></div>
+  <div class="toc-item"><span>§7 &nbsp; Limitations</span><span class="toc-pg">8</span></div>
+  <div class="toc-item"><span>§8 &nbsp; Future Scope</span><span class="toc-pg">9</span></div>
+  <div class="toc-item"><span>§9 &nbsp; SDG Goals &amp; Conclusion</span><span class="toc-pg">10</span></div>
 
   <div class="page-footer-line"></div>
   <div class="page-num">Page 2</div>
 </div>
 
 
-<!-- ============================================================
-     PAGE 3 — OBJECTIVES
-============================================================ -->
+<!-- PAGE 3 — OBJECTIVES -->
 <div class="page" id="page-3">
 
   <h2><span class="section-number">§2</span> Objectives of the Project</h2>
 
   <p>
-    The FactoryFlow DBMS project is guided by six primary objectives that span database
+    The FactoryFlow DBMS project is guided by six primary objectives spanning database
     engineering, system design, AI integration, and the practical demonstration of DBMS
     value in an industrial context.
   </p>
@@ -569,28 +502,29 @@
     <p>
       Track and display production Key Performance Indicators — including units produced,
       defect rates, efficiency percentages, shift-wise throughput, revenue, cost, and
-      profit — in real time using Server-Sent Events (SSE) to push live updates to the
-      executive dashboard without manual page refresh.
+      profit — in real time using an in-process event bus (DataEvents) to push live updates
+      to the executive dashboard without manual page refresh or polling.
     </p>
   </div>
 
   <div class="info-card">
     <h3>Objective 3 — Complete Employee Lifecycle Management</h3>
     <p>
-      Manage the full employee lifecycle through the DBMS: onboarding (hiring), role
-      assignment, inter-departmental transfers, promotions (tracked with history),
-      leave management, and termination — all with soft-delete patterns and audit
-      logging to maintain data integrity.
+      Manage the full employee lifecycle through the DBMS: onboarding, role assignment,
+      inter-departmental transfers, promotions (tracked with history), leave management,
+      and soft-delete termination — all with audit logging to maintain data integrity and
+      referential completeness.
     </p>
   </div>
 
   <div class="info-card">
-    <h3>Objective 4 — AI-Powered Analytics Integration (Groq LLM)</h3>
+    <h3>Objective 4 — AI-Powered Natural Language CRUD &amp; Analytics</h3>
     <p>
-      Integrate Groq Cloud's <em>llama-3.1-8b-instant</em> Large Language Model to
-      provide six distinct AI analytics services: production forecasting, anomaly
-      detection, workforce analytics, quality control scoring, performance benchmarking,
-      and an interactive executive AI chat assistant.
+      Integrate Groq Cloud's <em>llama-3.3-70b-versatile</em> Large Language Model to
+      provide an AI chat assistant capable of executing full CRUD operations through natural
+      language ("update employee E1004's email", "add 500 units for Product A"), plus
+      six distinct analytical services: forecasting, anomaly detection, workforce analytics,
+      quality scoring, benchmarking, and executive insight generation.
     </p>
   </div>
 
@@ -599,8 +533,8 @@
     <p>
       Demonstrate how a structured DBMS improves organizational decision-making by
       computing a composite <strong>Industrial Performance Index (IPI)</strong> from
-      four pillars — efficiency, quality, workforce, and financial performance — and
-      surfacing actionable recommendations to management.
+      four pillars — efficiency (30%), quality (25%), workforce (25%), and financial
+      performance (20%) — and surfacing actionable recommendations to management.
     </p>
   </div>
 
@@ -610,7 +544,7 @@
       Generate automated, multi-page PDF reports (using PDFKit) that pull live data
       directly from the PostgreSQL database. Reports include KPI summaries, trend
       charts, AI insights, employee analytics, and the IPI dashboard — eliminating
-      manual report compilation.
+      manual report compilation entirely.
     </p>
   </div>
 
@@ -619,9 +553,7 @@
 </div>
 
 
-<!-- ============================================================
-     PAGE 4 — SYSTEM ARCHITECTURE & METHODOLOGY
-============================================================ -->
+<!-- PAGE 4 — SYSTEM ARCHITECTURE -->
 <div class="page" id="page-4">
 
   <h2><span class="section-number">§3</span> System Architecture &amp; Methodology</h2>
@@ -630,14 +562,13 @@
   <p>
     FactoryFlow was developed using an <strong>Agile iterative approach</strong> with a
     database-first design philosophy. The PostgreSQL schema was finalized and validated
-    before front-end development began, ensuring that all UI components are driven by
-    well-structured relational data rather than ad-hoc data shapes.
+    before front-end development began, ensuring all UI components are driven by
+    well-structured relational data.
   </p>
 
   <h3>3.2 Three-Tier Architecture</h3>
-
   <div class="arch-row">
-    <div class="arch-box">Tier 1: Presentation<br/><small style="font-weight:400;font-size:9pt;color:var(--muted)">Next.js 14 / React / TailwindCSS</small></div>
+    <div class="arch-box">Tier 1: Presentation<br/><small style="font-weight:400;font-size:9pt;color:var(--muted)">Next.js 15 / React / TailwindCSS</small></div>
     <div class="arch-arrow">&#8595;</div>
     <div class="arch-box">Tier 2: Application<br/><small style="font-weight:400;font-size:9pt;color:var(--muted)">Next.js API Routes / Prisma ORM</small></div>
     <div class="arch-arrow">&#8595;</div>
@@ -646,42 +577,44 @@
 
   <p style="margin-top:12px;">
     The <strong>Presentation Tier</strong> renders the executive dashboard, charts, and
-    data tables. The <strong>Application Tier</strong> handles business logic, data
-    validation, AI API calls, and PDF generation. The <strong>Data Tier</strong> stores
-    all persistent data in a fully relational, ACID-compliant PostgreSQL database accessed
-    via Prisma ORM with type-safe queries.
+    data tables using React components with module-level cache and a custom DataEvents
+    event bus for zero-refresh live updates. The <strong>Application Tier</strong> handles
+    business logic, validation, AI API calls, and PDF generation. The <strong>Data Tier</strong>
+    stores all persistent data in a fully relational, ACID-compliant PostgreSQL database
+    accessed via Prisma ORM with type-safe queries.
   </p>
 
-  <h3>3.3 Real-Time Data Flow</h3>
+  <h3>3.3 Real-Time Data Flow (Event Bus Architecture)</h3>
   <p>
-    Live dashboard updates are delivered via <strong>Server-Sent Events (SSE)</strong>.
-    When a production record is created or updated, the API endpoint broadcasts the
-    change to all connected dashboard clients — achieving near-real-time KPI visibility
-    without polling overhead.
+    Live dashboard updates are delivered via a custom <strong>in-process DataEvents bus</strong>.
+    When a production record or employee is created/updated via the AI or UI, the handler
+    calls <code>invalidateCache()</code> first (to clear the 5-minute module-level cache),
+    then emits the relevant event. Subscribed React hooks immediately re-fetch fresh data
+    — achieving real-time KPI visibility without polling or full page refresh.
   </p>
 
   <h3>3.4 AI Integration Architecture</h3>
   <p>
-    The application tier assembles a structured context payload from live PostgreSQL
-    data and sends it to the <strong>Groq Cloud API</strong> (<em>llama-3.1-8b-instant</em>
-    model). The LLM returns structured JSON responses containing forecasts, anomaly flags,
-    and recommendations, which are parsed and rendered on the dashboard and in PDF reports.
+    The application tier assembles a structured context payload (all employees, departments,
+    roles, production KPIs) from live PostgreSQL data and sends it to the <strong>Groq
+    Cloud API</strong> (<em>llama-3.3-70b-versatile</em> model, max 1200 tokens, streaming
+    enabled). The AI returns natural text with embedded <code>```action```</code> blocks
+    that the frontend parses and presents as confirmed CRUD operations.
   </p>
 
   <h3>3.5 Technology Stack</h3>
-
   <table class="data-table">
     <thead>
       <tr><th>Layer</th><th>Technology</th><th>Role</th></tr>
     </thead>
     <tbody>
-      <tr><td>Frontend</td><td>Next.js 14, React, TailwindCSS</td><td>Dashboard UI, routing, SSE client</td></tr>
+      <tr><td>Frontend</td><td>Next.js 15, React, TailwindCSS, Framer Motion</td><td>Dashboard UI, routing, real-time UI</td></tr>
       <tr><td>Backend</td><td>Next.js API Routes (Node.js)</td><td>REST endpoints, business logic</td></tr>
-      <tr><td>ORM</td><td>Prisma ORM</td><td>Type-safe DB queries, migrations</td></tr>
+      <tr><td>ORM</td><td>Prisma ORM 5.x</td><td>Type-safe DB queries, migrations</td></tr>
       <tr><td>Database</td><td>PostgreSQL 15</td><td>Persistent relational storage</td></tr>
-      <tr><td>AI / LLM</td><td>Groq Cloud API (llama-3.1-8b)</td><td>Analytics, forecasting, chat</td></tr>
+      <tr><td>AI / LLM</td><td>Groq Cloud API (llama-3.3-70b)</td><td>NL-CRUD, analytics, chat</td></tr>
       <tr><td>Reporting</td><td>PDFKit (Node.js)</td><td>Automated PDF report generation</td></tr>
-      <tr><td>Styling</td><td>TailwindCSS, Recharts</td><td>UI design and data visualization</td></tr>
+      <tr><td>Visualization</td><td>Recharts, ECharts</td><td>Production charts and KPI graphs</td></tr>
       <tr><td>Version Control</td><td>Git / GitHub</td><td>Source management &amp; collaboration</td></tr>
     </tbody>
   </table>
@@ -691,16 +624,14 @@
 </div>
 
 
-<!-- ============================================================
-     PAGE 5 — DATABASE DESIGN
-============================================================ -->
+<!-- PAGE 5 — DATABASE DESIGN -->
 <div class="page" id="page-5">
 
   <h2><span class="section-number">§4</span> Database Design</h2>
 
   <p>
     The FactoryFlow PostgreSQL database comprises <strong>8 relational models</strong>
-    normalized to Third Normal Form (3NF). Every model has a UUID primary key, created
+    normalized to Third Normal Form (3NF). Every model has an integer primary key, created
     and updated timestamps, and appropriate foreign-key constraints to enforce referential
     integrity.
   </p>
@@ -711,26 +642,24 @@
       <tr><th>Model</th><th>Description</th><th>Key Fields</th></tr>
     </thead>
     <tbody>
-      <tr><td><strong>Employee</strong></td><td>Industrial workforce records</td><td>name, employeeId, departmentId, roleId, status, isDeleted</td></tr>
-      <tr><td><strong>Department</strong></td><td>Factory departments</td><td>name, description</td></tr>
-      <tr><td><strong>Role</strong></td><td>Job roles with hierarchy</td><td>name, level, salaryGrade</td></tr>
-      <tr><td><strong>Product</strong></td><td>Manufactured product catalogue</td><td>name, SKU, category, unitCost</td></tr>
-      <tr><td><strong>Production</strong></td><td>Daily/shift production logs</td><td>productionDate, shift, unitsProduced, defects, efficiency, revenue, cost, profit, employeeId, productId</td></tr>
-      <tr><td><strong>PromotionHistory</strong></td><td>Employee promotion audit</td><td>employeeId, fromRoleId, toRoleId, promotionDate, remarks</td></tr>
-      <tr><td><strong>AuditLog</strong></td><td>System-wide audit trail</td><td>action, entity, entityId, performedBy, timestamp</td></tr>
+      <tr><td><strong>Employee</strong></td><td>Industrial workforce records</td><td>name, employeeCode, departmentId, roleId, status, isDeleted, email, phone, experience</td></tr>
+      <tr><td><strong>Department</strong></td><td>Factory departments</td><td>name, code, description</td></tr>
+      <tr><td><strong>Role</strong></td><td>Job roles with hierarchy</td><td>title, level (1–5), salaryGrade</td></tr>
+      <tr><td><strong>Product</strong></td><td>Manufactured product catalogue</td><td>name, SKU, category, unitCost, unitPrice</td></tr>
+      <tr><td><strong>Production</strong></td><td>Daily/shift production logs</td><td>productionDate, shift, units, defects, revenue, cost, profit, employeeId, productId</td></tr>
+      <tr><td><strong>PromotionHistory</strong></td><td>Employee promotion audit trail</td><td>employeeId, oldRoleId, newRoleId, remarks, promotionDate</td></tr>
+      <tr><td><strong>AuditLog</strong></td><td>System-wide change audit</td><td>action, entity, entityId, performedBy, timestamp</td></tr>
       <tr><td><strong>Dataset</strong></td><td>Imported benchmark datasets</td><td>name, source, uploadDate, records, schema</td></tr>
     </tbody>
   </table>
 
-  <h3>4.2 Key Relationships (Entity-Relationship Summary)</h3>
+  <h3>4.2 Key Relationships</h3>
   <ul>
     <li><strong>Employee → Department</strong>: Many-to-One (M:1) — each employee belongs to one department</li>
     <li><strong>Employee → Role</strong>: Many-to-One (M:1) — each employee holds one role at a time</li>
-    <li><strong>Production → Employee</strong>: Many-to-One (M:1) — production records are linked to the responsible employee</li>
+    <li><strong>Production → Employee</strong>: Many-to-One (M:1) — production records linked to responsible employee (optional)</li>
     <li><strong>Production → Product</strong>: Many-to-One (M:1) — each production run produces one product type</li>
-    <li><strong>PromotionHistory → Employee</strong>: Many-to-One (M:1) — multiple promotions per employee</li>
-    <li><strong>PromotionHistory → Role</strong>: Two FK references (fromRole, toRole) capturing the promotion transition</li>
-    <li><strong>AuditLog → (all entities)</strong>: Polymorphic reference via entity name + entityId string fields</li>
+    <li><strong>PromotionHistory → Employee</strong>: Many-to-One — multiple promotions per employee, both old and new role captured</li>
   </ul>
 
   <h3>4.3 Enumerations</h3>
@@ -758,9 +687,9 @@
   <ul>
     <li>Composite indexes on <code>productionDate</code>, <code>departmentId</code>, and <code>roleId</code> for fast dashboard queries</li>
     <li>Indexes on all foreign key columns to accelerate JOIN operations</li>
-    <li><strong>Soft delete</strong> pattern on Employee model (<code>isDeleted</code> boolean flag) — records are never physically removed, preserving audit trails</li>
+    <li><strong>Soft delete</strong> pattern on Employee model (<code>isDeleted</code> boolean flag) — records never physically removed, preserving audit trails</li>
     <li>Financial fields (<code>revenue</code>, <code>cost</code>, <code>profit</code>) stored as <code>Decimal</code> type on Production for precision</li>
-    <li>Database-level <code>CHECK</code> constraints on efficiency (0–100) and defect rates</li>
+    <li>Module-level in-memory cache with 5-minute TTL for frequently queried API routes</li>
   </ul>
 
   <div class="page-footer-line"></div>
@@ -768,15 +697,13 @@
 </div>
 
 
-<!-- ============================================================
-     PAGE 6 — MODULES IMPLEMENTED
-============================================================ -->
+<!-- PAGE 6 — MODULES IMPLEMENTED -->
 <div class="page" id="page-6">
 
   <h2><span class="section-number">§5</span> Modules Implemented</h2>
 
   <p>
-    FactoryFlow is organized into five functional modules, each backed by dedicated
+    FactoryFlow is organized into six functional modules, each backed by dedicated
     API routes, Prisma queries, and React UI components.
   </p>
 
@@ -784,54 +711,63 @@
     <h3>Module 1 — Production Management</h3>
     <p>
       Log, edit, and delete production records with fields for date, shift, units produced,
-      defects, efficiency percentage, and financial data (revenue, cost, profit). Provides
-      real-time efficiency calculation on record entry, shift-wise throughput tracking, and
-      defect-rate monitoring with threshold alerts. Supports bulk data import via CSV.
+      defects, efficiency percentage, and auto-computed financial data (revenue, cost, profit).
+      Supports real-time efficiency calculation on entry, shift-wise throughput tracking,
+      defect-rate monitoring with threshold alerts, and bulk CSV import with smart column
+      detection and row-level validation.
     </p>
   </div>
 
   <div class="module-block">
     <h3>Module 2 — Employee Management</h3>
     <p>
-      Full CRUD operations on employee records with role hierarchy enforcement (L1 = Entry Level
-      through L5 = Executive). Manages employment status transitions (Active → On Leave /
-      Resigned / Terminated), complete promotion history with before/after role recording,
-      and department transfer tracking. Soft-delete ensures historical data integrity.
+      Full CRUD on employee records with role hierarchy enforcement (L1 Entry → L5 Executive).
+      Employment status transitions (Active / On Leave / Resigned / Terminated), complete
+      promotion history with before/after role recording, and department transfer tracking.
+      Soft-delete preserves historical integrity; isDeleted filter excludes deleted records
+      from all live queries.
     </p>
   </div>
 
   <div class="module-block">
-    <h3>Module 3 — AI Analytics Engine (Groq LLM)</h3>
+    <h3>Module 3 — AI Natural Language Assistant (Groq LLM)</h3>
     <p>
-      Six AI-powered analytical services powered by Groq's <em>llama-3.1-8b-instant</em> model:
+      Floating chat assistant powered by <em>llama-3.3-70b-versatile</em> with streaming
+      responses. Supports full CRUD via plain English: "update employee E1004's email to
+      x@y.com", "delete production record #5", "promote Rahul to Senior Engineer". AI
+      resolves names/codes to DB IDs automatically, outputs a confirmed action card, and
+      triggers instant UI refresh via the event bus upon execution.
     </p>
-    <ul style="margin-top:6px;font-family:Arial,sans-serif;font-size:11pt;">
-      <li><strong>Production Forecast:</strong> 30/60/90-day output predictions with confidence intervals</li>
-      <li><strong>Anomaly Detection:</strong> Flags statistical outliers in production and defect data</li>
-      <li><strong>Workforce Analytics:</strong> Productivity scores, attrition risk, optimal staffing recommendations</li>
-      <li><strong>Quality Control Scoring:</strong> Sigma-level estimation and defect-per-million-opportunities</li>
-      <li><strong>Performance Benchmarking:</strong> Compares KPIs against industry benchmarks with gap analysis</li>
-      <li><strong>AI Chat Assistant:</strong> Natural-language queries answered with live DB context</li>
-    </ul>
   </div>
 
   <div class="module-block">
     <h3>Module 4 — Decision Intelligence (IPI)</h3>
     <p>
-      Computes the <strong>Industrial Performance Index (IPI)</strong> — a composite 0–100 score
-      derived from four weighted pillars: Efficiency Score (30%), Quality Score (25%),
-      Workforce Score (25%), and Financial Score (20%). The IPI is displayed as a real-time
-      gauge on the executive dashboard with actionable recommendations for each pillar.
+      Computes the <strong>Industrial Performance Index (IPI)</strong> — a composite 0–100
+      score from four weighted pillars: Efficiency (30%), Quality (25%), Workforce (25%),
+      and Financial (20%). Displayed as a real-time gauge on the executive dashboard with
+      AI-generated recommendations for each pillar, plus production forecasting, anomaly
+      detection, and workforce optimization analytics.
     </p>
   </div>
 
   <div class="module-block">
-    <h3>Module 5 — Dashboard &amp; Automated Reporting</h3>
+    <h3>Module 5 — Executive Dashboard &amp; Charts</h3>
     <p>
-      A real-time executive dashboard with SSE-driven live KPI cards, Recharts-powered trend
-      visualizations, and a shift comparison grid. Automated 9-page PDF report generation
-      (via PDFKit) includes: cover page, KPI summary, production trends, employee analytics,
-      AI insights, IPI scores, quality analysis, financial overview, and recommendations.
+      Real-time executive dashboard with live KPI cards (production output, active workforce,
+      system efficiency, defect rate), period-over-period change indicators, Recharts-powered
+      production trend charts, efficiency trend charts, and a recent production records table.
+      All updates propagate instantly via DataEvents — no page refresh required.
+    </p>
+  </div>
+
+  <div class="module-block">
+    <h3>Module 6 — Automated PDF Reporting &amp; Smart Import</h3>
+    <p>
+      Automated 9-page PDF report generation via PDFKit: cover page, KPI summary, production
+      trends, employee analytics, AI insights, IPI scores, quality analysis, financial overview,
+      and recommendations. Smart CSV import engine detects column semantics (employee code,
+      units, defects, shift, date) automatically and executes validated bulk inserts.
     </p>
   </div>
 
@@ -840,9 +776,7 @@
 </div>
 
 
-<!-- ============================================================
-     PAGE 7 — HARDWARE & SOFTWARE REQUIREMENTS
-============================================================ -->
+<!-- PAGE 7 — HARDWARE & SOFTWARE REQUIREMENTS -->
 <div class="page" id="page-7">
 
   <h2><span class="section-number">§6</span> Hardware &amp; Software Requirements</h2>
@@ -855,8 +789,8 @@
     <tbody>
       <tr><td>Processor</td><td>Intel Core i3 / AMD Ryzen 3 (64-bit, 2 GHz+)</td><td>Intel Core i5/i7 or AMD Ryzen 5/7</td></tr>
       <tr><td>RAM</td><td>4 GB</td><td>8 GB or more</td></tr>
-      <tr><td>Storage</td><td>20 GB free disk space</td><td>50 GB SSD (for DB + node_modules)</td></tr>
-      <tr><td>Network</td><td>Stable broadband (for Groq API)</td><td>10 Mbps+ for real-time SSE streams</td></tr>
+      <tr><td>Storage</td><td>20 GB free disk space</td><td>50 GB SSD (DB + node_modules)</td></tr>
+      <tr><td>Network</td><td>Stable broadband (for Groq API calls)</td><td>10 Mbps+ for real-time event streaming</td></tr>
       <tr><td>Display</td><td>1280 × 768 resolution</td><td>1920 × 1080 (Full HD)</td></tr>
       <tr><td>OS</td><td>Windows 10 / Ubuntu 20.04 / macOS 11</td><td>Windows 11 / Ubuntu 22.04</td></tr>
     </tbody>
@@ -870,25 +804,25 @@
     <tbody>
       <tr><td>Node.js</td><td>18 LTS or newer</td><td>JavaScript runtime for Next.js</td></tr>
       <tr><td>PostgreSQL</td><td>15.x or newer</td><td>Primary relational database</td></tr>
-      <tr><td>Next.js</td><td>14.x</td><td>Full-stack React framework</td></tr>
+      <tr><td>Next.js</td><td>15.x</td><td>Full-stack React framework</td></tr>
       <tr><td>Prisma ORM</td><td>5.x</td><td>Type-safe DB access &amp; migrations</td></tr>
-      <tr><td>Groq Cloud API</td><td>Latest (cloud)</td><td>LLM AI analytics services</td></tr>
-      <tr><td>PDFKit</td><td>0.14.x</td><td>Programmatic PDF report generation</td></tr>
+      <tr><td>Groq Cloud API</td><td>Latest (cloud)</td><td>LLM-powered AI analytics &amp; NL-CRUD</td></tr>
+      <tr><td>PDFKit</td><td>0.14.x</td><td>Automated PDF report generation</td></tr>
       <tr><td>TailwindCSS</td><td>3.x</td><td>Utility-first CSS styling</td></tr>
+      <tr><td>Recharts / ECharts</td><td>Latest</td><td>Data visualization &amp; charts</td></tr>
       <tr><td>Git</td><td>2.x</td><td>Version control</td></tr>
       <tr><td>VS Code</td><td>Latest</td><td>Primary development IDE</td></tr>
       <tr><td>pgAdmin 4</td><td>Latest</td><td>PostgreSQL GUI management</td></tr>
-      <tr><td>npm / yarn</td><td>npm 9+ / yarn 1.22+</td><td>Package management</td></tr>
       <tr><td>Postman</td><td>Latest</td><td>API endpoint testing</td></tr>
     </tbody>
   </table>
 
   <h3>6.3 External Services &amp; APIs</h3>
   <ul>
-    <li><strong>Groq Cloud API</strong> — AI inference endpoint for LLM analytics (requires API key; free tier available)</li>
+    <li><strong>Groq Cloud API</strong> — AI inference endpoint for llama-3.3-70b-versatile (free tier available)</li>
     <li><strong>GitHub</strong> — Source code repository and project collaboration</li>
     <li><strong>Vercel</strong> (optional) — Deployment platform for Next.js application</li>
-    <li><strong>Neon / Supabase</strong> (optional) — Managed PostgreSQL hosting for cloud deployment</li>
+    <li><strong>Neon / Supabase</strong> (optional) — Managed PostgreSQL for cloud deployment</li>
   </ul>
 
   <div class="page-footer-line"></div>
@@ -896,76 +830,73 @@
 </div>
 
 
-<!-- ============================================================
-     PAGE 8 — LIMITATIONS
-============================================================ -->
+<!-- PAGE 8 — LIMITATIONS -->
 <div class="page" id="page-8">
 
   <h2><span class="section-number">§7</span> Limitations</h2>
 
   <p>
     While FactoryFlow DBMS provides a comprehensive demonstration of DBMS impact on industrial
-    performance, several limitations exist in the current version of the system. These are
-    acknowledged transparently and form the basis of future development directions.
+    performance, several limitations exist in the current version. These are acknowledged
+    transparently and form the basis of future development directions.
   </p>
 
   <div class="info-card">
     <h3>Limitation 1 — Internet Dependency for AI Features</h3>
     <p>
-      All six AI analytics services rely on the <strong>Groq Cloud API</strong>, which requires
-      an active internet connection. There is currently no offline AI fallback or locally-hosted
-      LLM option. In environments with restricted internet access (e.g., secure factory floors),
-      AI features are unavailable.
+      All AI analytics and natural-language CRUD services rely on the <strong>Groq Cloud
+      API</strong>, requiring an active internet connection. There is no offline AI fallback
+      or locally-hosted LLM option. In environments with restricted connectivity (e.g., secure
+      factory floors), AI features are unavailable.
     </p>
   </div>
 
   <div class="info-card">
-    <h3>Limitation 2 — PDF Generation Performance at Scale</h3>
-    <p>
-      The automated PDF report is generated synchronously using PDFKit on the Node.js server.
-      Report generation performance degrades noticeably with datasets exceeding <strong>10,000
-      production records</strong>. There is no pagination or streaming during generation; the
-      client must wait for the full report to be assembled before downloading.
-    </p>
-  </div>
-
-  <div class="info-card">
-    <h3>Limitation 3 — Real-Time Connectivity Requirements</h3>
-    <p>
-      The live dashboard relies on <strong>Server-Sent Events (SSE)</strong> for real-time
-      updates. Unstable network connections, proxy servers, or firewalls that do not support
-      persistent HTTP connections may interrupt the live data stream. The dashboard falls back
-      to last-known data but does not automatically reconnect without a page refresh.
-    </p>
-  </div>
-
-  <div class="info-card">
-    <h3>Limitation 4 — Single-Tenant Architecture</h3>
-    <p>
-      FactoryFlow is currently designed as a <strong>single-factory, single-tenant</strong>
-      system. There is no concept of organizations, factories, or tenant isolation. All users
-      accessing the system share the same database schema and data. Multi-factory enterprise
-      deployment is not supported in the current version.
-    </p>
-  </div>
-
-  <div class="info-card">
-    <h3>Limitation 5 — No Role-Based Access Control (RBAC)</h3>
+    <h3>Limitation 2 — No Role-Based Access Control (RBAC)</h3>
     <p>
       The current system does not implement user authentication or role-based access control.
-      All dashboard features — including employee termination, data deletion, and AI analytics —
-      are accessible to any user with application access. Production deployment would require
-      an authentication layer.
+      All dashboard features — including employee termination, record deletion, and AI-executed
+      CRUD — are accessible to any user with application access. Production deployment would
+      require a full authentication and authorization layer.
     </p>
   </div>
 
   <div class="info-card">
-    <h3>Limitation 6 — No IoT / Live Machine Integration</h3>
+    <h3>Limitation 3 — Single-Tenant Architecture</h3>
+    <p>
+      FactoryFlow is a <strong>single-factory, single-tenant</strong> system. There is no
+      organization or tenant isolation concept. All users accessing the system share the same
+      database schema and data. Multi-factory enterprise deployment is not supported.
+    </p>
+  </div>
+
+  <div class="info-card">
+    <h3>Limitation 4 — PDF Generation Performance at Scale</h3>
+    <p>
+      The automated PDF report is generated synchronously using PDFKit on the Node.js server.
+      Performance degrades noticeably with datasets exceeding <strong>10,000 production records
+      </strong>. There is no pagination during generation; the client waits for the full report
+      to be assembled before downloading.
+    </p>
+  </div>
+
+  <div class="info-card">
+    <h3>Limitation 5 — No IoT / Live Machine Integration</h3>
     <p>
       Production data is entered manually through the web interface or via CSV import.
-      The system does not currently integrate with physical machines, PLCs, SCADA systems,
-      or IoT sensors. All KPIs are derived from manually-entered records rather than
-      automated machine telemetry.
+      The system does not integrate with physical machines, PLCs, SCADA systems, or IoT
+      sensors. All KPIs are derived from manually-entered records rather than automated
+      machine telemetry.
+    </p>
+  </div>
+
+  <div class="info-card">
+    <h3>Limitation 6 — AI Hallucination Risk on Ambiguous Commands</h3>
+    <p>
+      Although the AI is supplied with the complete employee and product master data, there
+      is a small risk of the LLM misresolving ambiguous names to incorrect IDs. The
+      action-confirmation card (which requires user approval before execution) mitigates
+      this risk but does not eliminate it entirely.
     </p>
   </div>
 
@@ -974,83 +905,79 @@
 </div>
 
 
-<!-- ============================================================
-     PAGE 9 — FUTURE SCOPE
-============================================================ -->
+<!-- PAGE 9 — FUTURE SCOPE -->
 <div class="page" id="page-9">
 
   <h2><span class="section-number">§8</span> Future Scope</h2>
 
   <p>
     The current FactoryFlow DBMS lays a strong relational and AI foundation. The following
-    enhancements represent the natural evolution of the system toward an enterprise-grade
-    Industrial Intelligence Platform.
+    enhancements represent the natural evolution toward an enterprise-grade Industrial
+    Intelligence Platform.
   </p>
 
   <div class="module-block">
-    <h3>1. IoT Integration for Real-Time Machine Sensor Data</h3>
+    <h3>1. Role-Based Access Control &amp; Multi-User Authentication</h3>
     <p>
-      Connect FactoryFlow directly to industrial IoT sensors and PLCs (Programmable Logic
-      Controllers) on the shop floor. Machine telemetry — vibration, temperature, speed,
-      downtime events — would be streamed directly into the PostgreSQL database, eliminating
-      manual data entry and enabling truly real-time production monitoring.
+      Implement JWT-based authentication with role hierarchies: Viewer (read-only dashboard),
+      Manager (CRUD on own department), Admin (full system access), and Super Admin (tenant
+      management). Integrate with Active Directory / OAuth2 for enterprise SSO.
     </p>
   </div>
 
   <div class="module-block">
-    <h3>2. Apache Kafka for High-Throughput Data Streaming</h3>
+    <h3>2. IoT Integration for Real-Time Machine Sensor Data</h3>
     <p>
-      For large-scale industrial deployments generating thousands of events per second,
-      Apache Kafka would be introduced as a message broker between sensor sources and the
-      database ingestion layer. This enables fault-tolerant, horizontally scalable data
-      pipelines without overwhelming the PostgreSQL write path.
+      Connect FactoryFlow directly to industrial IoT sensors and PLCs on the shop floor.
+      Machine telemetry — vibration, temperature, speed, downtime events — would be streamed
+      into PostgreSQL via MQTT or WebSocket, eliminating manual entry and enabling truly
+      real-time monitoring.
     </p>
   </div>
 
   <div class="module-block">
-    <h3>3. Machine Learning Predictive Maintenance Models</h3>
+    <h3>3. Text-to-SQL for Advanced Database Queries</h3>
     <p>
-      Train domain-specific ML models (using scikit-learn or PyTorch) on historical
-      production and defect data to predict equipment failure before it occurs. Predictive
-      maintenance scheduling would be surfaced in the dashboard, reducing unplanned downtime
-      and maintenance costs.
+      Extend the AI assistant with <strong>Text-to-SQL</strong> capability: managers type
+      plain-English questions ("What was average efficiency in Department 3 last quarter?")
+      and the system automatically generates, validates, and executes safe parameterized SQL
+      queries — making the full database accessible without SQL knowledge.
     </p>
   </div>
 
   <div class="module-block">
-    <h3>4. Mobile Application for Shop-Floor Managers</h3>
+    <h3>4. Machine Learning Predictive Maintenance Models</h3>
     <p>
-      Develop a React Native mobile application allowing shift supervisors and shop-floor
-      managers to log production records, review shift KPIs, and receive AI-generated alerts
-      directly on their smartphones — extending system access beyond desktop environments.
+      Train domain-specific ML models on historical production and defect data to predict
+      equipment failure before it occurs. Predictive maintenance scheduling would surface
+      in the dashboard, reducing unplanned downtime and maintenance costs.
     </p>
   </div>
 
   <div class="module-block">
     <h3>5. Multi-Tenant Enterprise Architecture</h3>
     <p>
-      Redesign the database schema with tenant isolation (schema-per-tenant or
-      row-level-security) to support multiple factories under a single deployment. Include
-      a central admin portal for cross-factory KPI benchmarking and consolidated reporting.
+      Redesign with tenant isolation (row-level-security or schema-per-tenant) to support
+      multiple factories under a single deployment. Include a central admin portal for
+      cross-factory KPI benchmarking and consolidated reporting.
     </p>
   </div>
 
   <div class="module-block">
-    <h3>6. Natural Language Database Querying (Text-to-SQL)</h3>
+    <h3>6. Mobile Application for Shop-Floor Managers</h3>
     <p>
-      Extend the AI chat assistant beyond insight generation to support <strong>Text-to-SQL</strong>:
-      managers would type plain-English questions ("What was average efficiency in Department 3
-      last quarter?") and the system would automatically generate and execute the SQL query,
-      returning live results — making the database accessible without SQL knowledge.
+      Develop a React Native mobile application allowing shift supervisors to log production
+      records, review shift KPIs, receive AI-generated alerts, and trigger NL-CRUD commands
+      directly from smartphones on the factory floor.
     </p>
   </div>
 
   <div class="module-block">
-    <h3>7. Advanced Data Visualization &amp; BI Dashboard</h3>
+    <h3>7. Apache Kafka for High-Throughput Data Streaming</h3>
     <p>
-      Integrate a Business Intelligence layer (Apache Superset or Metabase connected to
-      PostgreSQL) providing drill-down charts, custom report builders, and scheduled email
-      delivery of KPI summaries to executive stakeholders.
+      For large-scale deployments generating thousands of events per second, Apache Kafka
+      as a message broker between sensor sources and the DB ingestion layer, enabling
+      fault-tolerant, horizontally scalable data pipelines.
     </p>
   </div>
 
@@ -1059,9 +986,7 @@
 </div>
 
 
-<!-- ============================================================
-     PAGE 10 — SDG GOALS & CONCLUSION
-============================================================ -->
+<!-- PAGE 10 — SDG GOALS & CONCLUSION -->
 <div class="page" id="page-10">
 
   <h2><span class="section-number">§9</span> SDG Goals, Engineering Outcomes &amp; Conclusion</h2>
@@ -1073,10 +998,10 @@
     <div>
       <strong>SDG 8 — Decent Work and Economic Growth</strong>
       <p>
-        FactoryFlow's employee lifecycle management — tracking promotions, fair role assignments,
-        leave management, and workforce analytics — directly supports decent work conditions.
-        The system provides data-driven workforce optimization, helping organizations grow
-        economically while ensuring equitable employee management.
+        FactoryFlow's employee lifecycle management — tracking promotions, fair role
+        assignments, leave management, and workforce analytics — directly supports decent
+        work conditions. The system provides data-driven workforce optimization, helping
+        organizations grow economically while ensuring equitable employee management.
       </p>
     </div>
   </div>
@@ -1086,10 +1011,10 @@
     <div>
       <strong>SDG 9 — Industry, Innovation and Infrastructure</strong>
       <p>
-        By integrating AI analytics, real-time monitoring, and relational DBMS into a
-        manufacturing context, FactoryFlow demonstrates how smart digital infrastructure
-        drives industrial innovation. The system replaces manual paper-based processes
-        with resilient, scalable technological solutions for factory operations.
+        By integrating AI analytics, natural language CRUD, real-time monitoring, and
+        relational DBMS into a manufacturing context, FactoryFlow demonstrates how smart
+        digital infrastructure drives industrial innovation — replacing manual paper-based
+        processes with resilient, scalable technological solutions.
       </p>
     </div>
   </div>
@@ -1097,67 +1022,50 @@
   <div class="sdg-item">
     <div class="sdg-badge sdg-12">12<small>SDG</small></div>
     <div>
-      <strong>SDG 12 — Responsible Consumption and Production</strong>
+      <strong>SDG 12 — Responsible Production and Consumption</strong>
       <p>
-        Defect-rate tracking, quality control scoring, and production efficiency analytics
-        directly address responsible production. By identifying and reducing waste in the
-        production process through data-driven insights, FactoryFlow supports the goal of
-        more sustainable and resource-efficient industrial manufacturing.
+        The defect-rate monitoring, quality scoring (sigma-level estimation), and production
+        efficiency KPIs directly support responsible manufacturing. By quantifying waste
+        (defective units) and linking it to financial costs, FactoryFlow creates economic
+        incentives for quality improvement and waste reduction.
       </p>
     </div>
   </div>
 
-  <h3>9.2 Program Outcomes (POs) &amp; PSOs Achieved</h3>
+  <h3>9.2 Engineering Graduate Outcomes (EOs) Demonstrated</h3>
   <div style="margin-top:8px;">
-    <span class="outcome-pill">PO1 Engineering Knowledge</span>
-    <span class="outcome-pill">PO2 Problem Analysis</span>
-    <span class="outcome-pill">PO3 Design &amp; Development</span>
-    <span class="outcome-pill">PO4 Investigations</span>
-    <span class="outcome-pill">PO5 Modern Tool Usage</span>
-    <span class="outcome-pill">PO6 Engineer &amp; Society</span>
-    <span class="outcome-pill">PO10 Communication</span>
-    <span class="outcome-pill">PO11 Project Management</span>
-    <span class="outcome-pill">PSO1</span>
-    <span class="outcome-pill">PSO2</span>
+    <span class="outcome-pill">EO1: Problem Analysis</span>
+    <span class="outcome-pill">EO2: Design Solutions</span>
+    <span class="outcome-pill">EO3: Modern Tool Usage</span>
+    <span class="outcome-pill">EO4: Ethics &amp; Society</span>
+    <span class="outcome-pill">EO5: Individual &amp; Team Work</span>
+    <span class="outcome-pill">EO6: Communication</span>
   </div>
 
   <h3 style="margin-top:22px;">9.3 Conclusion</h3>
+
   <div class="highlight-box">
-    <p>
-      FactoryFlow DBMS successfully demonstrates that a <strong>well-designed relational database
-      management system</strong>, when combined with an AI analytics layer and a real-time web
-      interface, can significantly improve industrial organizational performance across all
-      dimensions — production efficiency, workforce management, quality control, and financial
-      visibility.
+    <p style="margin-bottom:8px;">
+      <strong>FactoryFlow DBMS</strong> successfully demonstrates that a well-designed,
+      AI-augmented relational database system measurably improves industrial organizational
+      performance across all dimensions: production efficiency, workforce management, quality
+      control, financial oversight, and executive decision-making.
     </p>
-    <p>
-      The project validates the core hypothesis: DBMS adoption in industrial settings is not
-      merely a technical upgrade but a strategic organizational transformation. By replacing
-      manual, error-prone data management with structured, queryable, auditable relational data,
-      FactoryFlow enables management to move from reactive firefighting to proactive, data-driven
-      decision-making.
-    </p>
-    <p>
-      The integration of Groq AI analytics elevates the system beyond a traditional DBMS project,
-      showing how modern industrial database systems can serve as the foundation for intelligent
-      manufacturing — aligning with Industry 4.0 principles and the digital transformation goals
-      of contemporary industrial enterprises.
+    <p style="margin-bottom:0;">
+      The project goes beyond a traditional DBMS implementation by integrating a natural-language
+      AI assistant capable of executing full CRUD operations through conversational commands —
+      making the database accessible to non-technical factory managers. The real-time event bus
+      architecture ensures that every data change propagates to the dashboard instantly, delivering
+      a live operational picture that static spreadsheet systems fundamentally cannot provide.
     </p>
   </div>
 
-  <table class="data-table" style="margin-top:18px;">
-    <thead>
-      <tr><th>Aspect</th><th>Achievement</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>Database Design</td><td>8 models, 3NF normalized, fully indexed PostgreSQL schema</td></tr>
-      <tr><td>AI Integration</td><td>6 analytical services via Groq LLM API</td></tr>
-      <tr><td>Real-Time System</td><td>SSE-powered live dashboard with sub-second KPI updates</td></tr>
-      <tr><td>Automated Reporting</td><td>9-page PDFKit-generated executive reports from live DB</td></tr>
-      <tr><td>Decision Support</td><td>Industrial Performance Index (IPI) with 4-pillar scoring</td></tr>
-      <tr><td>SDGs Addressed</td><td>SDG 8, SDG 9, SDG 12</td></tr>
-    </tbody>
-  </table>
+  <p>
+    Through this project, Group G19 has practically validated the theoretical claim that
+    DBMS adoption drives organizational performance — and extended that claim to demonstrate
+    the additional multiplier effect of AI-powered data interaction, real-time visibility,
+    and automated reporting on industrial decision quality.
+  </p>
 
   <div class="page-footer-line"></div>
   <div class="page-num">Page 10</div>

@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 export async function GET(request) {
   try {
     const employees = await prisma.employee.findMany({
+      where: { isDeleted: false },
       include: {
         department: {
           select: { id: true, name: true },

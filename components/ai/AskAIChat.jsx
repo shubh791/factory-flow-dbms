@@ -30,6 +30,22 @@ const ACTION_CHIPS = [
   { label: '🗑 Delete record',   q: 'Delete production record with ID 1.' },
 ];
 
+/* ── Auto-generate narrative when AI skips it ────────────────────────── */
+function narrativeFromAction(action) {
+  const d = action.data || {};
+  switch (action.type) {
+    case 'create_employee':    return `Adding new employee **${d.name || 'Unknown'}** with code \`${d.employeeCode || 'auto'}\` to the system.`;
+    case 'update_employee':    return `Updating employee record${d.email ? ` — setting email to \`${d.email}\`` : ''}${d.status ? ` — changing status to **${d.status}**` : ''}${d.name ? ` — renaming to **${d.name}**` : ''}.`;
+    case 'delete_employee':    return `Preparing to permanently delete employee \`${d.employeeId || d.employeeCode || 'unknown'}\` from the system.`;
+    case 'create_production':  return `Logging a new production record — **${d.units || 100}** units of product \`${d.productId}\` on ${d.shift || 'MORNING'} shift.`;
+    case 'update_production':  return `Updating production record **#${d.recordId}** with new values.`;
+    case 'delete_production':  return `Deleting production record **#${d.recordId || d.id}** from the database.`;
+    case 'promote_employee':   return `Promoting employee \`${d.employeeId}\` to a higher role in the hierarchy.`;
+    case 'update_employee_status': return `Changing employee \`${d.employeeId}\` status to **${d.status}**.`;
+    default:                   return `Executing: **${action.type.replace(/_/g, ' ')}** — review the action below.`;
+  }
+}
+
 /* ── Parse action block ──────────────────────────────────────────────── */
 function parseActionBlock(text) {
   const match = text.match(/```action\s*([\s\S]*?)\s*```/);
@@ -92,16 +108,10 @@ function ActionCard({ action, onDismiss }) {
       const res = await API.post('/ai/action', { type: action.type, data: action.data });
       setMsg(res.data.message || 'Done');
       setState('done');
-
       const t = action.type;
-      // Invalidate cache first, then emit so mounted hooks re-fetch with fresh data
-      if (t.includes('production')) {
-        invalidateCache(['/production', '/analytics/executive-summary']);
-      }
-      if (t.includes('employee') || t.includes('promote') || t === 'update_employee_status') {
+      if (t.includes('production')) invalidateCache(['/production', '/analytics/executive-summary']);
+      if (t.includes('employee') || t.includes('promote') || t === 'update_employee_status')
         invalidateCache(['/employees', '/analytics/executive-summary']);
-      }
-      // Emit events AFTER cache cleared — hooks will re-fetch immediately
       if (t.includes('production'))  emit(DataEvents.PRODUCTION_CHANGED);
       if (t.includes('employee') || t.includes('promote') || t === 'update_employee_status')
         emit(DataEvents.EMPLOYEES_CHANGED);
@@ -114,71 +124,119 @@ function ActionCard({ action, onDismiss }) {
     }
   };
 
+  const actionLabel = action.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
   return (
     <div style={{
-      marginTop: 10, borderRadius: 12,
-      background: 'rgba(245,158,11,0.05)',
-      border: '1px solid rgba(245,158,11,0.18)',
+      marginTop: 10, borderRadius: 14,
+      background: 'linear-gradient(135deg, rgba(245,158,11,0.04), rgba(251,191,36,0.02))',
+      border: '1px solid rgba(245,158,11,0.22)',
       overflow: 'hidden',
+      boxShadow: '0 2px 12px rgba(245,158,11,0.06)',
     }}>
-      {/* Header strip */}
-      <div style={{ padding: '8px 14px', background: 'rgba(245,158,11,0.08)', borderBottom: '1px solid rgba(245,158,11,0.12)', display: 'flex', alignItems: 'center', gap: 7 }}>
-        <FaBolt size={9} style={{ color: '#f59e0b' }} />
-        <span style={{ fontSize: 10.5, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          Action Required
+      {/* Header */}
+      <div style={{
+        padding: '9px 14px',
+        background: 'rgba(245,158,11,0.07)',
+        borderBottom: '1px solid rgba(245,158,11,0.14)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <div style={{
+            width: 22, height: 22, borderRadius: 6,
+            background: 'rgba(245,158,11,0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <FaBolt size={9} style={{ color: '#f59e0b' }} />
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', letterSpacing: '0.05em' }}>
+            PENDING ACTION
+          </span>
+        </div>
+        <span style={{
+          fontSize: 9.5, color: 'rgba(245,158,11,0.6)',
+          background: 'rgba(245,158,11,0.08)',
+          padding: '2px 8px', borderRadius: 20,
+          border: '1px solid rgba(245,158,11,0.15)',
+          fontFamily: 'monospace',
+        }}>
+          {action.type}
         </span>
       </div>
 
-      <div style={{ padding: '12px 14px' }}>
-        <p style={{ fontSize: 13, color: '#d4d4e8', lineHeight: 1.6, marginBottom: 12 }}>
-          {action.confirm}
-        </p>
+      <div style={{ padding: '13px 14px 14px' }}>
+        {/* Confirm text */}
+        <div style={{
+          display: 'flex', gap: 9, alignItems: 'flex-start',
+          padding: '10px 12px', borderRadius: 9, marginBottom: 12,
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          <span style={{ fontSize: 15, lineHeight: 1, marginTop: 1 }}>⚡</span>
+          <p style={{ fontSize: 12.5, color: '#e2e2f2', lineHeight: 1.65, margin: 0 }}>
+            {action.confirm}
+          </p>
+        </div>
 
         {state === 'idle' && (
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={execute} style={{
-              flex: 1, padding: '9px 0', borderRadius: 9, border: 'none',
-              background: 'rgba(16,185,129,0.18)', color: '#34d399',
-              fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
+              flex: 1, padding: '10px 0', borderRadius: 10, border: 'none',
+              background: 'linear-gradient(135deg, rgba(16,185,129,0.22), rgba(5,150,105,0.18))',
+              color: '#34d399', fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              transition: 'background 0.15s',
+              transition: 'all 0.15s',
+              boxShadow: '0 2px 8px rgba(16,185,129,0.1)',
             }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(16,185,129,0.28)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'rgba(16,185,129,0.18)'}
+              onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg,rgba(16,185,129,0.32),rgba(5,150,105,0.26))'; e.currentTarget.style.boxShadow = '0 3px 14px rgba(16,185,129,0.18)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg,rgba(16,185,129,0.22),rgba(5,150,105,0.18))'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(16,185,129,0.1)'; }}
             >
-              <FaPlay size={8} /> Yes, Execute
+              <FaPlay size={8} /> Confirm &amp; Execute
             </button>
             <button onClick={onDismiss} style={{
-              flex: 1, padding: '9px 0', borderRadius: 9,
-              border: '1px solid rgba(244,63,94,0.2)',
-              background: 'rgba(244,63,94,0.06)', color: '#fb7185',
-              fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              transition: 'background 0.15s',
+              flex: '0 0 42px', padding: '10px 0', borderRadius: 10,
+              border: '1px solid rgba(244,63,94,0.18)',
+              background: 'rgba(244,63,94,0.05)', color: '#fb7185',
+              fontSize: 13, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.15s',
             }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(244,63,94,0.12)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'rgba(244,63,94,0.06)'}
+              title="Dismiss"
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(244,63,94,0.12)'; e.currentTarget.style.borderColor = 'rgba(244,63,94,0.3)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(244,63,94,0.05)'; e.currentTarget.style.borderColor = 'rgba(244,63,94,0.18)'; }}
             >
-              <FaTimes size={8} /> Cancel
+              <FaTimes size={10} />
             </button>
           </div>
         )}
 
         {state === 'running' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#818cf8', fontSize: 13 }}>
-            <FaSpinner size={12} style={{ animation: 'spin 0.7s linear infinite' }} />
-            Executing action…
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 14px', borderRadius: 10,
+            background: 'rgba(99,102,241,0.07)',
+            border: '1px solid rgba(99,102,241,0.15)',
+            color: '#818cf8', fontSize: 12.5,
+          }}>
+            <FaSpinner size={12} style={{ animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />
+            <span>Executing <strong style={{ color: '#a5b4fc' }}>{actionLabel}</strong>…</span>
           </div>
         )}
 
         {(state === 'done' || state === 'error') && (
           <div style={{
-            display: 'flex', alignItems: 'flex-start', gap: 9, borderRadius: 9, padding: '10px 12px',
-            background: state === 'done' ? 'rgba(16,185,129,0.08)' : 'rgba(244,63,94,0.08)',
+            display: 'flex', alignItems: 'flex-start', gap: 10,
+            borderRadius: 10, padding: '11px 13px',
+            background: state === 'done' ? 'rgba(16,185,129,0.07)' : 'rgba(244,63,94,0.07)',
             border: `1px solid ${state === 'done' ? 'rgba(16,185,129,0.2)' : 'rgba(244,63,94,0.2)'}`,
           }}>
-            <FaCheckCircle size={12} style={{ color: state === 'done' ? '#10b981' : '#f43f5e', flexShrink: 0, marginTop: 1 }} />
-            <span style={{ fontSize: 12.5, color: state === 'done' ? '#34d399' : '#f87191', lineHeight: 1.5 }}>{msg}</span>
+            <FaCheckCircle size={13} style={{ color: state === 'done' ? '#10b981' : '#f43f5e', flexShrink: 0, marginTop: 1 }} />
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: state === 'done' ? '#10b981' : '#f43f5e', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {state === 'done' ? 'Completed' : 'Failed'}
+              </div>
+              <span style={{ fontSize: 12.5, color: state === 'done' ? '#6ee7b7' : '#f87191', lineHeight: 1.55 }}>{msg}</span>
+            </div>
           </div>
         )}
       </div>
@@ -269,7 +327,11 @@ export default function AskAIChat({ defaultOpen = false }) {
       }
 
       const action       = parseActionBlock(acc);
-      const cleanContent = action ? stripActionBlock(acc) : acc;
+      let   cleanContent = action ? stripActionBlock(acc) : acc;
+      // If AI returned only an action block with no narrative, generate one
+      if (action && !cleanContent.trim()) {
+        cleanContent = narrativeFromAction(action);
+      }
 
       setMessages(prev => {
         const next = [...prev];
