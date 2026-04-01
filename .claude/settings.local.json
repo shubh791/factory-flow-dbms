@@ -7,7 +7,11 @@
       "Bash(node_modules/.bin/next build:*)",
       "Bash(node -e \"require\\(''@emotion/cache''\\); require\\(''groq-sdk''\\);\")",
       "Bash(grep -r \"PDFDocument\\\\|pdfkit\\\\|pdf\" '/d/downloads/Downloads/dbms upgrade/factory-flow-dbms/app' --include=*.js --include=*.jsx)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(findstr /v \"PackFileCacheStrategy Restoring Caching uncaughtException EPERM\")",
+      "Bash(findstr /i \"error build syntax\")",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(cmd /c \"taskkill /F /IM node.exe\")"
     ]
   }
 }

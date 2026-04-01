@@ -1,22 +1,26 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { FaPlus, FaEdit, FaTimes, FaSave } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTimes, FaSave, FaTrash, FaExclamationTriangle } from 'react-icons/fa';
 import API from '@/lib/api';
 import { useFactoryData, invalidateCache } from '@/lib/hooks/useFactoryData';
 import { emit, DataEvents } from '@/lib/events';
 
 export default function ProductionPage() {
-  const { data: prodData,  loading, refresh: refreshProd } = useFactoryData('/production');
-  const { data: productsData }                             = useFactoryData('/products');
-  const { data: empData }                                  = useFactoryData('/employees');
+  const { data: prodData,  loading, refresh: refreshProd } = useFactoryData('/production', {
+    listenTo: [DataEvents.PRODUCTION_CHANGED],
+  });
+  const { data: productsData } = useFactoryData('/products');
+  const { data: empData }      = useFactoryData('/employees');
 
   const production = useMemo(() => prodData     || [], [prodData]);
   const products   = useMemo(() => productsData || [], [productsData]);
   const employees  = useMemo(() => empData      || [], [empData]);
 
+  const today = new Date().toISOString().slice(0, 10);
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null); // { id, label }
   const [formData, setFormData] = useState({
     id: null,
     units: '',
@@ -24,6 +28,7 @@ export default function ProductionPage() {
     productId: '',
     employeeId: '',
     shift: 'MORNING',
+    productionDate: today,
   });
 
   const fetchData = () => {
@@ -40,16 +45,18 @@ export default function ProductionPage() {
           units: Number(formData.units),
           defects: Number(formData.defects),
           productId: Number(formData.productId),
-          employeeId: Number(formData.employeeId),
+          employeeId: formData.employeeId ? Number(formData.employeeId) : null,
           shift: formData.shift,
+          productionDate: formData.productionDate || undefined,
         });
       } else {
         await API.post('/production', {
           units: Number(formData.units),
           defects: Number(formData.defects),
           productId: Number(formData.productId),
-          employeeId: Number(formData.employeeId),
+          employeeId: formData.employeeId ? Number(formData.employeeId) : null,
           shift: formData.shift,
+          productionDate: formData.productionDate || undefined,
         });
       }
       fetchData();
@@ -62,12 +69,11 @@ export default function ProductionPage() {
   const openAddModal = () => {
     setEditMode(false);
     setFormData({
-      id: null,
-      units: '',
-      defects: '0',
+      id: null, units: '', defects: '0',
       productId: products[0]?.id || '',
-      employeeId: employees[0]?.id || '',
+      employeeId: employees.find(e => e.status === 'ACTIVE')?.id || '',
       shift: 'MORNING',
+      productionDate: today,
     });
     setShowModal(true);
   };
@@ -81,12 +87,25 @@ export default function ProductionPage() {
       productId: record.product?.id || '',
       employeeId: record.employee?.id || '',
       shift: record.shift,
+      productionDate: record.productionDate ? new Date(record.productionDate).toISOString().slice(0, 10) : today,
     });
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      await API.delete(`/production/${confirmDelete.id}`);
+      fetchData();
+    } catch (error) {
+      alert(error.response?.data?.error || 'Delete failed');
+    } finally {
+      setConfirmDelete(null);
+    }
   };
 
   const stats = {
@@ -174,13 +193,22 @@ export default function ProductionPage() {
                       {new Date(record.productionDate).toLocaleDateString()}
                     </td>
                     <td>
-                      <button
-                        onClick={() => openEditModal(record)}
-                        className="text-xs text-[var(--color-info)] hover:underline flex items-center gap-1"
-                      >
-                        <FaEdit size={10} />
-                        Edit
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => openEditModal(record)}
+                          className="text-xs text-[var(--color-info)] hover:underline flex items-center gap-1"
+                        >
+                          <FaEdit size={10} />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete({ id: record.id, label: `${record.product?.name || 'Record'} — ${record.units} units` })}
+                          className="text-xs text-[var(--color-danger)] hover:underline flex items-center gap-1"
+                        >
+                          <FaTrash size={10} />
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -189,6 +217,42 @@ export default function ProductionPage() {
           </table>
         </div>
       </div>
+
+      {/* ── Delete confirmation ── */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="industrial-card-elevated w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-[var(--color-danger)]/10 flex items-center justify-center">
+                <FaExclamationTriangle size={18} className="text-[var(--color-danger)]" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">Are you sure?</h3>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">This action cannot be undone.</p>
+              </div>
+            </div>
+            <p className="text-sm text-[var(--text-secondary)] mb-6">
+              Delete production record <strong className="text-[var(--text-primary)]">{confirmDelete.label}</strong>?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="btn-industrial btn-secondary flex-1"
+              >
+                No
+              </button>
+              <button
+                onClick={handleDelete}
+                className="btn-industrial flex-1 flex items-center justify-center gap-2"
+                style={{ background: 'var(--color-danger)', color: '#fff', border: 'none' }}
+              >
+                <FaTrash size={11} />
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
@@ -272,6 +336,16 @@ export default function ProductionPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Production Date</label>
+                <input
+                  type="date"
+                  value={formData.productionDate}
+                  onChange={(e) => setFormData({ ...formData, productionDate: e.target.value })}
+                  className="input-industrial"
+                />
               </div>
 
               <div className="flex gap-3 pt-2">

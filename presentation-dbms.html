@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FactoryFlow DBMS — Group G19 Presentation</title>
+
+  <!-- Reveal.js CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4/dist/theme/black.css" />
+
+  <style>
+    /* =====================================================
+       BASE OVERRIDES
+    ===================================================== */
+    :root {
+      --bg:        #0f0f14;
+      --surface:   #1a1a24;
+      --surface2:  #22223a;
+      --indigo:    #6366f1;
+      --indigo-lt: #818cf8;
+      --green:     #10b981;
+      --amber:     #f59e0b;
+      --red:       #f43f5e;
+      --cyan:      #06b6d4;
+      --purple:    #a855f7;
+      --text:      #e2e8f0;
+      --muted:     #94a3b8;
+      --border:    rgba(99,102,241,0.3);
+    }
+
+    .reveal-viewport,
+    .reveal,
+    .reveal .slides {
+      background: var(--bg) !important;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+      color: var(--text) !important;
+    }
+
+    .reveal .slides section {
+      text-align: left;
+      padding: 0 !important;
+      height: 100%;
+      box-sizing: border-box;
+    }
+
+    /* =====================================================
+       SLIDE WRAPPER
+    ===================================================== */
+    .slide-inner {
+      padding: 36px 52px 28px 52px;
+      height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Top accent bar */
+    .slide-inner::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--indigo), var(--cyan), var(--green));
+    }
+
+    /* Left accent border variant */
+    .slide-inner.accent-left::before {
+      width: 4px;
+      height: 100%;
+      top: 0; left: 0; right: auto;
+      background: linear-gradient(180deg, var(--indigo), var(--green));
+    }
+
+    /* Background decoration circles */
+    .slide-inner::after {
+      content: '';
+      position: absolute;
+      width: 320px; height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 70%);
+      bottom: -80px; right: -80px;
+      pointer-events: none;
+    }
+
+    /* =====================================================
+       SLIDE HEADER
+    ===================================================== */
+    .slide-tag {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--indigo-lt);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .slide-tag::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      max-width: 160px;
+    }
+
+    .slide-title {
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 18px 0;
+      line-height: 1.2;
+    }
+    .slide-title .accent { color: var(--indigo-lt); }
+
+    /* =====================================================
+       BULLET LISTS
+    ===================================================== */
+    .reveal ul, .reveal ol {
+      margin: 0 !important;
+      padding-left: 0 !important;
+      list-style: none !important;
+    }
+
+    .bullet-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .bullet-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 0.92rem;
+      color: var(--text);
+      line-height: 1.5;
+      padding: 9px 14px;
+      background: var(--surface);
+      border-radius: 8px;
+      border-left: 3px solid var(--indigo);
+      transition: border-color 0.2s;
+    }
+    .bullet-list li:nth-child(2) { border-left-color: var(--green); }
+    .bullet-list li:nth-child(3) { border-left-color: var(--amber); }
+    .bullet-list li:nth-child(4) { border-left-color: var(--cyan); }
+    .bullet-list li:nth-child(5) { border-left-color: var(--purple); }
+    .bullet-list li:nth-child(6) { border-left-color: var(--red); }
+
+    .bullet-list li .num {
+      min-width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--indigo);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .bullet-list li:nth-child(2) .num { background: var(--green); }
+    .bullet-list li:nth-child(3) .num { background: var(--amber); color: #000; }
+    .bullet-list li:nth-child(4) .num { background: var(--cyan); color: #000; }
+    .bullet-list li:nth-child(5) .num { background: var(--purple); }
+    .bullet-list li:nth-child(6) .num { background: var(--red); }
+
+    /* Dot bullets (no number) */
+    .dot-list li {
+      border-left-width: 3px;
+      padding: 7px 12px;
+      font-size: 0.88rem;
+      background: rgba(99,102,241,0.07);
+    }
+    .dot-list li::before {
+      content: '▸';
+      color: var(--indigo-lt);
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    /* =====================================================
+       GRID LAYOUTS
+    ===================================================== */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* =====================================================
+       CARD COMPONENTS
+    ===================================================== */
+    .card {
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 14px 16px;
+      border: 1px solid rgba(99,102,241,0.15);
+    }
+    .card-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .card-body {
+      font-size: 0.88rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* KPI box */
+    .kpi-box {
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      border-top: 3px solid var(--indigo);
+    }
+    .kpi-box.green  { border-top-color: var(--green); }
+    .kpi-box.amber  { border-top-color: var(--amber); }
+    .kpi-box.red    { border-top-color: var(--red); }
+    .kpi-box.cyan   { border-top-color: var(--cyan); }
+    .kpi-box.purple { border-top-color: var(--purple); }
+
+    .kpi-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+    .kpi-value {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+    .kpi-desc {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* =====================================================
+       TECH STACK PILLS
+    ===================================================== */
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .pill {
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(99,102,241,0.18);
+      color: var(--indigo-lt);
+      border: 1px solid rgba(99,102,241,0.3);
+      white-space: nowrap;
+    }
+    .pill.green  { background: rgba(16,185,129,0.15); color: #34d399; border-color: rgba(16,185,129,0.3); }
+    .pill.amber  { background: rgba(245,158,11,0.15);  color: #fbbf24; border-color: rgba(245,158,11,0.3); }
+    .pill.red    { background: rgba(244,63,94,0.15);   color: #fb7185; border-color: rgba(244,63,94,0.3); }
+    .pill.cyan   { background: rgba(6,182,212,0.15);   color: #22d3ee; border-color: rgba(6,182,212,0.3); }
+    .pill.purple { background: rgba(168,85,247,0.15);  color: #c084fc; border-color: rgba(168,85,247,0.3); }
+
+    /* =====================================================
+       SECTION HEADERS (colored)
+    ===================================================== */
+    .section-header {
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 4px 10px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    .sh-indigo { background: rgba(99,102,241,0.2);  color: var(--indigo-lt); }
+    .sh-green  { background: rgba(16,185,129,0.2);  color: #34d399; }
+    .sh-amber  { background: rgba(245,158,11,0.2);  color: #fbbf24; }
+    .sh-red    { background: rgba(244,63,94,0.2);   color: #fb7185; }
+    .sh-cyan   { background: rgba(6,182,212,0.2);   color: #22d3ee; }
+    .sh-purple { background: rgba(168,85,247,0.2);  color: #c084fc; }
+
+    /* =====================================================
+       PROGRESS BAR
+    ===================================================== */
+    .progress-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-bottom: 10px;
+    }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text);
+    }
+    .progress-track {
+      height: 8px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: var(--indigo);
+    }
+    .progress-fill.green  { background: var(--green); }
+    .progress-fill.amber  { background: var(--amber); }
+    .progress-fill.cyan   { background: var(--cyan); }
+
+    /* =====================================================
+       DIVIDER
+    ===================================================== */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 12px 0;
+    }
+
+    /* =====================================================
+       SLIDE 1 — TITLE SPECIFIC
+    ===================================================== */
+    .title-slide .slide-inner {
+      justify-content: center;
+      align-items: flex-start;
+      padding: 48px 64px;
+    }
+    .title-slide .slide-inner::before {
+      height: 5px;
+      background: linear-gradient(90deg, var(--indigo), var(--cyan), var(--green), var(--amber));
+    }
+    .title-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.35);
+      color: var(--indigo-lt);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    .main-title {
+      font-size: 3rem;
+      font-weight: 900;
+      line-height: 1.05;
+      color: #fff;
+      margin: 0 0 12px 0;
+    }
+    .main-title .grad {
+      background: linear-gradient(135deg, var(--indigo-lt), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle-text {
+      font-size: 1.05rem;
+      color: var(--muted);
+      line-height: 1.5;
+      max-width: 620px;
+      margin-bottom: 28px;
+    }
+    .team-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .team-chip {
+      padding: 5px 14px;
+      border-radius: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .institute-text {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .guide-text {
+      font-size: 0.82rem;
+      color: #34d399;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    /* =====================================================
+       ARCH DIAGRAM
+    ===================================================== */
+    .arch-flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin: 10px 0;
+    }
+    .arch-box {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1.4;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .arch-box.fe { background: rgba(99,102,241,0.2); color: var(--indigo-lt); border-color: rgba(99,102,241,0.4); }
+    .arch-box.be { background: rgba(6,182,212,0.2);  color: #22d3ee; border-color: rgba(6,182,212,0.4); }
+    .arch-box.db { background: rgba(16,185,129,0.2); color: #34d399; border-color: rgba(16,185,129,0.4); }
+    .arch-box.ai { background: rgba(168,85,247,0.2); color: #c084fc; border-color: rgba(168,85,247,0.4); }
+
+    .arch-arrow {
+      font-size: 1.1rem;
+      color: var(--muted);
+      padding: 0 6px;
+      flex-shrink: 0;
+    }
+
+    /* =====================================================
+       SCHEMA MODEL BADGES
+    ===================================================== */
+    .model-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .model-badge {
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* =====================================================
+       THANK YOU SLIDE
+    ===================================================== */
+    .thankyou-slide .slide-inner {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .thankyou-title {
+      font-size: 3.5rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--indigo-lt), var(--cyan), var(--green));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0 0 8px 0;
+    }
+    .thankyou-sub {
+      font-size: 1.2rem;
+      color: var(--muted);
+      margin-bottom: 30px;
+    }
+
+    /* =====================================================
+       REVEAL OVERRIDES
+    ===================================================== */
+    .reveal .progress {
+      background: rgba(99,102,241,0.2);
+      color: var(--indigo);
+    }
+    .reveal .slide-number {
+      background: rgba(99,102,241,0.15);
+      color: var(--indigo-lt);
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+      font-family: 'Segoe UI', system-ui, sans-serif !important;
+      text-transform: none !important;
+      letter-spacing: normal !important;
+    }
+
+    /* Ensure slides fill height nicely */
+    .reveal .slides > section {
+      height: 700px;
+    }
+
+    /* Small utility */
+    .mt-4  { margin-top: 4px; }
+    .mt-8  { margin-top: 8px; }
+    .mt-12 { margin-top: 12px; }
+    .mt-16 { margin-top: 16px; }
+    .flex-1 { flex: 1; }
+    .text-muted { color: var(--muted); font-size: 0.82rem; }
+    .text-green  { color: #34d399; }
+    .text-amber  { color: #fbbf24; }
+    .text-indigo { color: var(--indigo-lt); }
+    .text-cyan   { color: #22d3ee; }
+    .text-red    { color: #fb7185; }
+    .bold { font-weight: 700; }
+    .small { font-size: 0.82rem; }
+    .mono { font-family: 'Courier New', monospace; font-size: 0.82rem; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ============================================================
+     SLIDE 1 — TITLE
+============================================================ -->
+<section class="title-slide">
+  <div class="slide-inner" style="justify-content:center; align-items:flex-start; padding:0; flex-direction:row; gap:0;">
+
+    <!-- Left: Text content -->
+    <div style="flex:1;padding:44px 48px;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:2;">
+      <div class="title-badge">
+        <span>&#9670;</span> B.Tech Final Year Project &nbsp;|&nbsp; Group G19
+      </div>
+
+      <div class="main-title">
+        <span class="grad">FactoryFlow</span> DBMS
+      </div>
+
+      <div class="subtitle-text">
+        Impact of Database Management Systems on<br />
+        <strong style="color:#c7d2fe;">Organizational Performance in an Industry</strong>
+      </div>
+
+      <div class="institute-text">Panipat Institute of Engineering &amp; Technology</div>
+      <div class="guide-text">&#128218; Guide: Dr. B.K Verma</div>
+
+      <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:var(--muted); margin-bottom:8px;">Team Members</div>
+      <div class="team-row">
+        <div class="team-chip">Kartik &nbsp;<span style="color:var(--muted);">2822530</span></div>
+        <div class="team-chip">Sushant &nbsp;<span style="color:var(--muted);">2822532</span></div>
+        <div class="team-chip">Shubham Pangal &nbsp;<span style="color:var(--muted);">2822512</span></div>
+      </div>
+    </div>
+
+    <!-- Right: Real factory image -->
+    <div style="width:340px;flex-shrink:0;position:relative;overflow:hidden;height:100%;">
+      <img
+        src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=680&q=85&auto=format&fit=crop"
+        alt="Modern factory floor"
+        style="width:100%;height:100%;object-fit:cover;opacity:0.75;display:block;"
+      />
+      <!-- Gradient overlay blending into bg -->
+      <div style="position:absolute;inset:0;background:linear-gradient(90deg,var(--bg) 0%,transparent 30%,transparent 70%,rgba(15,15,20,0.6) 100%);"></div>
+      <!-- Bottom label -->
+      <div style="position:absolute;bottom:18px;left:0;right:0;text-align:center;">
+        <span style="font-size:0.62rem;color:rgba(255,255,255,0.4);letter-spacing:0.08em;text-transform:uppercase;">Industrial DBMS · Group G19</span>
+      </div>
+    </div>
+
+    <!-- Top accent bar (override for split layout) -->
+    <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--indigo),var(--cyan),var(--green),var(--amber));z-index:3;"></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 2 — PROBLEM STATEMENT
+============================================================ -->
+<section>
+  <div class="slide-inner">
+    <div class="slide-tag">Slide 02</div>
+    <div class="slide-title">Problem <span class="accent">Statement</span></div>
+
+    <div class="flex-1" style="display:flex;gap:18px;">
+      <!-- Bullet list (left/main) -->
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+      <ul class="bullet-list">
+        <li>
+          <span class="num">1</span>
+          <span>Industries manage <strong>massive data manually</strong> — leading to errors, delays, and zero analytics capability</span>
+        </li>
+        <li>
+          <span class="num">2</span>
+          <span><strong>No real-time visibility</strong> into production KPIs — managers operate without live operational data</span>
+        </li>
+        <li>
+          <span class="num">3</span>
+          <span><strong>Employee performance not tracked</strong> systematically — no structured workforce accountability</span>
+        </li>
+        <li>
+          <span class="num">4</span>
+          <span>Decisions based on <strong>intuition, not data</strong> — absence of evidence-based operational intelligence</span>
+        </li>
+        <li>
+          <span class="num">5</span>
+          <span><strong>No AI-driven forecasting</strong> or anomaly detection — reactive rather than proactive management</span>
+        </li>
+      </ul>
+
+      <div style="margin-top:14px;padding:12px 16px;background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.25);border-radius:8px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:1.5rem;">&#9888;</span>
+        <span style="font-size:0.85rem;color:#fda4af;">
+          <strong style="color:#fb7185;">Core Gap:</strong> No centralized, intelligent DBMS exists for real-time industrial monitoring, workforce analytics, and AI-powered decision support.
+        </span>
+      </div>
+      </div>
+
+      <!-- Right: Full-height industrial image -->
+      <div style="width:300px;flex-shrink:0;position:relative;overflow:hidden;border-radius:12px;margin:4px 0 4px 0;">
+        <img
+          src="https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=600&q=90&auto=format&fit=crop"
+          alt="Industrial factory workers"
+          style="width:100%;height:100%;object-fit:cover;opacity:0.85;display:block;"
+        />
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,15,20,0.1) 0%,rgba(15,15,20,0.65) 100%);"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:16px 14px;">
+          <div style="font-size:0.72rem;font-weight:700;color:#fb7185;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">The Problem</div>
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.75);line-height:1.5;">Manual processes &amp; no real-time data intelligence</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 3 — PROJECT OBJECTIVES
+============================================================ -->
+<section>
+  <div class="slide-inner">
+    <div class="slide-tag">Slide 03</div>
+    <div class="slide-title">Project <span class="accent">Objectives</span></div>
+
+    <div class="flex-1" style="display:flex;flex-direction:column;justify-content:center;">
+      <div class="grid-2" style="gap:14px;">
+        <div class="card" style="border-left:3px solid var(--indigo);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <div style="width:30px;height:30px;border-radius:8px;background:rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center;font-size:1rem;">&#128197;</div>
+            <span class="section-header sh-indigo">Centralized DBMS</span>
+          </div>
+          <div class="card-body">Build a centralized database for all industrial production data — structured, relational, and query-optimized.</div>
+        </div>
+
+        <div class="card" style="border-left:3px solid var(--green);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <div style="width:30px;height:30px;border-radius:8px;background:rgba(16,185,129,0.2);display:flex;align-items:center;justify-content:center;font-size:1rem;">&#9889;</div>
+            <span class="section-header sh-green">Real-Time Tracking</span>
+          </div>
+          <div class="card-body">Live monitoring of production output, employee status, and quality metrics via event-driven SSE system.</div>
+        </div>
+
+        <div class="card" style="border-left:3px solid var(--purple);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <div style="width:30px;height:30px;border-radius:8px;background:rgba(168,85,247,0.2);display:flex;align-items:center;justify-content:center;font-size:1rem;">&#129302;</div>
+            <span class="section-header sh-purple">AI-Powered Analytics</span>
+          </div>
+          <div class="card-body">Groq AI integration for forecasting, anomaly detection, quality scoring, and workforce benchmarking.</div>
+        </div>
+
+        <div class="card" style="border-left:3px solid var(--amber);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <div style="width:30px;height:30px;border-radius:8px;background:rgba(245,158,11,0.2);display:flex;align-items:center;justify-content:center;font-size:1rem;">&#128200;</div>
+            <span class="section-header sh-amber">Decision Intelligence</span>
+          </div>
+          <div class="card-body">Industrial Performance Index (IPI) — composite 0–100 score across 4 strategic pillars for executive decisions.</div>
+        </div>
+
+        <div class="card" style="border-left:3px solid var(--cyan);grid-column:1/-1;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <div style="width:30px;height:30px;border-radius:8px;background:rgba(6,182,212,0.2);display:flex;align-items:center;justify-content:center;font-size:1rem;">&#128196;</div>
+            <span class="section-header sh-cyan">Automated PDF Reports</span>
+          </div>
+          <div class="card-body">Auto-generate 9-page professional PDF reports with live data, AI commentary, and strategic recommendations — instantly downloadable.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 4 — SYSTEM ARCHITECTURE
+============================================================ -->
+<section>
+  <div class="slide-inner" style="flex-direction:row;padding:0;gap:0;">
+
+    <!-- Left: full-height server room image panel -->
+    <div style="width:290px;flex-shrink:0;position:relative;overflow:hidden;">
+      <img
+        src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=580&q=85&auto=format&fit=crop"
+        alt="Server room data center"
+        style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;"
+      />
+      <!-- gradient: dark on right to blend into content -->
+      <div style="position:absolute;inset:0;background:linear-gradient(270deg,rgba(15,15,20,0.8) 0%,rgba(15,15,20,0.25) 50%,rgba(15,15,20,0.1) 100%);"></div>
+      <!-- cyan tint overlay -->
+      <div style="position:absolute;inset:0;background:rgba(6,182,212,0.07);"></div>
+      <!-- vertical label -->
+      <div style="position:absolute;bottom:28px;left:50%;transform:translateX(-50%);text-align:center;">
+        <div style="font-size:0.62rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(34,211,238,0.9);white-space:nowrap;">Data Center</div>
+      </div>
+      <!-- 3-tier badge -->
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+        <div style="padding:6px 14px;border-radius:8px;background:rgba(15,15,20,0.7);backdrop-filter:blur(8px);border:1px solid rgba(6,182,212,0.35);">
+          <div style="font-size:0.65rem;font-weight:800;letter-spacing:0.14em;color:#22d3ee;text-transform:uppercase;white-space:nowrap;">3-Tier</div>
+          <div style="font-size:0.58rem;color:rgba(255,255,255,0.5);white-space:nowrap;">Architecture</div>
+        </div>
+      </div>
+      <!-- top accent bar -->
+      <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--cyan),var(--indigo));"></div>
+    </div>
+
+    <!-- Right: content pane -->
+    <div style="flex:1;padding:36px 52px 28px 44px;display:flex;flex-direction:column;justify-content:flex-start;position:relative;overflow:hidden;min-width:0;">
+      <!-- top accent bar -->
+      <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--indigo),var(--cyan),var(--green));z-index:3;"></div>
+      <div class="slide-tag" style="margin-top:10px;">Slide 04</div>
+      <div class="slide-title" style="margin-bottom:16px;">System <span class="accent">Architecture</span></div>
+
+      <!-- arch flow -->
+      <div class="arch-flow" style="margin-bottom:14px;flex-shrink:0;">
+        <div class="arch-box fe">
+          <div style="font-size:1.2rem;margin-bottom:4px;">&#128187;</div>
+          <div>Frontend</div>
+          <div style="font-size:0.65rem;opacity:0.8;margin-top:2px;">Next.js 14 + React</div>
+        </div>
+        <div class="arch-arrow">&#10132;</div>
+        <div class="arch-box be">
+          <div style="font-size:1.2rem;margin-bottom:4px;">&#9881;</div>
+          <div>API Layer</div>
+          <div style="font-size:0.65rem;opacity:0.8;margin-top:2px;">Next.js API Routes</div>
+        </div>
+        <div class="arch-arrow">&#10132;</div>
+        <div class="arch-box db">
+          <div style="font-size:1.2rem;margin-bottom:4px;">&#128451;</div>
+          <div>Database</div>
+          <div style="font-size:0.65rem;opacity:0.8;margin-top:2px;">PostgreSQL + Prisma</div>
+        </div>
+        <div class="arch-arrow">&#10132;</div>
+        <div class="arch-box ai">
+          <div style="font-size:1.2rem;margin-bottom:4px;">&#129302;</div>
+          <div>AI Engine</div>
+          <div style="font-size:0.65rem;opacity:0.8;margin-top:2px;">Groq / llama-3.3</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:12px;flex:1;">
+        <div class="card">
+          <div class="card-title" style="color:#818cf8;">Frontend Layer</div>
+          <ul class="bullet-list dot-list" style="gap:5px;">
+            <li>Next.js 14 App Router + React</li>
+            <li>Framer Motion animations</li>
+            <li>Recharts visualization library</li>
+            <li>TailwindCSS utility styling</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-title" style="color:#22d3ee;">Backend &amp; Data Layer</div>
+          <ul class="bullet-list dot-list" style="gap:5px;">
+            <li>REST APIs via Next.js route handlers</li>
+            <li>Prisma ORM with type-safe queries</li>
+            <li>PostgreSQL relational database</li>
+            <li>SSE for real-time event streaming</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 5 — DATABASE SCHEMA
+============================================================ -->
+<section>
+  <div class="slide-inner">
+    <div class="slide-tag">Slide 05</div>
+    <div class="slide-title">Database <span class="accent">Schema</span></div>
+
+    <div class="flex-1" style="display:flex;flex-direction:column;justify-content:center;gap:14px;">
+
+      <div>
+        <div class="section-header sh-indigo" style="margin-bottom:10px;">Core Models (8)</div>
+        <div class="model-grid">
+          <span class="model-badge" style="background:rgba(99,102,241,0.18);color:#818cf8;">Employee</span>
+          <span class="model-badge" style="background:rgba(16,185,129,0.18);color:#34d399;">Department</span>
+          <span class="model-badge" style="background:rgba(6,182,212,0.18);color:#22d3ee;">Role</span>
+          <span class="model-badge" style="background:rgba(245,158,11,0.18);color:#fbbf24;">Product</span>
+          <span class="model-badge" style="background:rgba(244,63,94,0.18);color:#fb7185;">Production</span>
+          <span class="model-badge" style="background:rgba(168,85,247,0.18);color:#c084fc;">PromotionHistory</span>
+          <span class="model-badge" style="background:rgba(99,102,241,0.12);color:#a5b4fc;">AuditLog</span>
+          <span class="model-badge" style="background:rgba(16,185,129,0.12);color:#6ee7b7;">Dataset</span>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:12px;">
+        <div class="card">
+          <div class="card-title" style="color:#fbbf24;">Enumerations</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div>
+              <div class="small text-muted bold">EmploymentStatus</div>
+              <div class="pill-group" style="margin-top:4px;">
+                <span class="pill green" style="font-size:0.68rem;">ACTIVE</span>
+                <span class="pill amber" style="font-size:0.68rem;">ON_LEAVE</span>
+                <span class="pill" style="font-size:0.68rem;background:rgba(99,102,241,0.1);">RESIGNED</span>
+                <span class="pill red" style="font-size:0.68rem;">TERMINATED</span>
+              </div>
+            </div>
+            <div>
+              <div class="small text-muted bold">ProductionShift</div>
+              <div class="pill-group" style="margin-top:4px;">
+                <span class="pill cyan" style="font-size:0.68rem;">MORNING</span>
+                <span class="pill amber" style="font-size:0.68rem;">EVENING</span>
+                <span class="pill" style="font-size:0.68rem;background:rgba(168,85,247,0.12);color:#c084fc;">NIGHT</span>
+              </div>
+            </div>
+            <div>
+              <div class="small text-muted bold">AuditAction</div>
+              <div class="pill-group" style="margin-top:4px;">
+                <span class="pill green" style="font-size:0.68rem;">CREATE</span>
+                <span class="pill amber" style="font-size:0.68rem;">UPDATE</span>
+                <span class="pill red" style="font-size:0.68rem;">DELETE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="color:#34d399;">Design Patterns</div>
+          <ul class="bullet-list dot-list" style="gap:6px;">
+            <li>Foreign key relational integrity across all models</li>
+            <li>Composite indexes: departmentId, roleId, productionDate</li>
+            <li>Soft-delete pattern for employee records</li>
+            <li>Audit trail: every write operation logged</li>
+            <li>Prisma migrations for schema versioning</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 5b — ER DIAGRAM (Database Design)
+============================================================ -->
+<section>
+  <div class="slide-inner">
+    <div class="slide-tag">Slide 05b — ER Diagram</div>
+    <div class="slide-title">Database <span class="accent">Design — ER Diagram</span></div>
+
+    <div class="flex-1" style="display:flex;flex-direction:column;justify-content:center;gap:10px;overflow:hidden;">
+
+      <!-- Top row: Department, Role, Employee (central) -->
+      <div style="display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:10px;">
+
+        <!-- Department -->
+        <div style="background:rgba(16,185,129,0.07);border:1.5px solid rgba(16,185,129,0.35);border-radius:10px;padding:10px 12px;">
+          <div style="font-size:0.7rem;font-weight:800;color:#34d399;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;border-bottom:1px solid rgba(16,185,129,0.2);padding-bottom:4px;">📦 Department</div>
+          <div style="font-size:0.68rem;color:var(--muted);line-height:1.9;">
+            <span style="color:#34d399;font-weight:700;">🔑 id</span> Int PK<br/>
+            name String UNIQUE<br/>
+            code String UNIQUE<br/>
+            description String?<br/>
+            createdAt DateTime
+          </div>
+        </div>
+
+        <!-- Employee (center, larger) -->
+        <div style="background:rgba(99,102,241,0.1);border:2px solid rgba(99,102,241,0.5);border-radius:10px;padding:10px 14px;position:relative;">
+          <div style="font-size:0.7rem;font-weight:800;color:#818cf8;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;border-bottom:1px solid rgba(99,102,241,0.25);padding-bottom:4px;">👤 Employee  <span style="font-size:0.6rem;background:rgba(99,102,241,0.2);padding:1px 6px;border-radius:4px;margin-left:4px;">CENTRAL</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 10px;font-size:0.68rem;color:var(--muted);line-height:1.9;">
+            <div><span style="color:#818cf8;font-weight:700;">🔑 id</span> Int PK</div>
+            <div>employeeCode UNIQUE</div>
+            <div>name String</div>
+            <div>email String?</div>
+            <div>phone String?</div>
+            <div>experience Int</div>
+            <div style="color:#f59e0b;">🔗 departmentId FK</div>
+            <div style="color:#f59e0b;">🔗 roleId FK</div>
+            <div>status Enum</div>
+            <div>isDeleted Boolean</div>
+          </div>
+        </div>
+
+        <!-- Role -->
+        <div style="background:rgba(168,85,247,0.07);border:1.5px solid rgba(168,85,247,0.35);border-radius:10px;padding:10px 12px;">
+          <div style="font-size:0.7rem;font-weight:800;color:#c084fc;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;border-bottom:1px solid rgba(168,85,247,0.2);padding-bottom:4px;">🎖 Role</div>
+          <div style="font-size:0.68rem;color:var(--muted);line-height:1.9;">
+            <span style="color:#c084fc;font-weight:700;">🔑 id</span> Int PK<br/>
+            title String UNIQUE<br/>
+            level Int<br/>
+            description String?<br/>
+            createdAt DateTime
+          </div>
+        </div>
+      </div>
+
+      <!-- Relationship arrows row -->
+      <div style="display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:10px;height:22px;">
+        <div style="display:flex;justify-content:center;align-items:center;font-size:0.65rem;color:#34d399;">↑ 1:N (employees)</div>
+        <div style="display:flex;justify-content:center;align-items:center;font-size:0.65rem;color:var(--muted);">↓ FK:departmentId  &nbsp;&nbsp;  ↓ FK:roleId</div>
+        <div style="display:flex;justify-content:center;align-items:center;font-size:0.65rem;color:#c084fc;">↑ 1:N (employees)</div>
+      </div>
+
+      <!-- Bottom row: Production, PromotionHistory, AuditLog, Dataset, Product -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:8px;">
+
+        <!-- Production -->
+        <div style="background:rgba(244,63,94,0.07);border:1.5px solid rgba(244,63,94,0.3);border-radius:8px;padding:8px 10px;">
+          <div style="font-size:0.62rem;font-weight:800;color:#fb7185;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;border-bottom:1px solid rgba(244,63,94,0.2);padding-bottom:3px;">⚙ Production</div>
+          <div style="font-size:0.62rem;color:var(--muted);line-height:1.85;">
+            <span style="color:#fb7185;">🔑 id</span> PK<br/>
+            units · defects Int<br/>
+            shift Enum<br/>
+            <span style="color:#f59e0b;">🔗 productId FK</span><br/>
+            <span style="color:#f59e0b;">🔗 employeeId FK</span><br/>
+            productionDate<br/>
+            revenue · cost · profit
+          </div>
+        </div>
+
+        <!-- Product -->
+        <div style="background:rgba(245,158,11,0.07);border:1.5px solid rgba(245,158,11,0.3);border-radius:8px;padding:8px 10px;">
+          <div style="font-size:0.62rem;font-weight:800;color:#fbbf24;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;border-bottom:1px solid rgba(245,158,11,0.2);padding-bottom:3px;">🏭 Product</div>
+          <div style="font-size:0.62rem;color:var(--muted);line-height:1.85;">
+            <span style="color:#fbbf24;">🔑 id</span> PK<br/>
+            name UNIQUE<br/>
+            sku String?<br/>
+            description?<br/>
+            unitPrice Float<br/>
+            unitCost Float<br/>
+            createdAt
+          </div>
+        </div>
+
+        <!-- PromotionHistory -->
+        <div style="background:rgba(6,182,212,0.07);border:1.5px solid rgba(6,182,212,0.3);border-radius:8px;padding:8px 10px;">
+          <div style="font-size:0.62rem;font-weight:800;color:#22d3ee;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;border-bottom:1px solid rgba(6,182,212,0.2);padding-bottom:3px;">📈 Promotion</div>
+          <div style="font-size:0.62rem;color:var(--muted);line-height:1.85;">
+            <span style="color:#22d3ee;">🔑 id</span> PK<br/>
+            <span style="color:#f59e0b;">🔗 employeeId FK</span><br/>
+            <span style="color:#f59e0b;">🔗 oldRoleId FK</span><br/>
+            <span style="color:#f59e0b;">🔗 newRoleId FK</span><br/>
+            remarks String?<br/>
+            promotedAt DateTime
+          </div>
+        </div>
+
+        <!-- AuditLog -->
+        <div style="background:rgba(99,102,241,0.06);border:1.5px solid rgba(99,102,241,0.25);border-radius:8px;padding:8px 10px;">
+          <div style="font-size:0.62rem;font-weight:800;color:#a5b4fc;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;border-bottom:1px solid rgba(99,102,241,0.18);padding-bottom:3px;">🔍 AuditLog</div>
+          <div style="font-size:0.62rem;color:var(--muted);line-height:1.85;">
+            <span style="color:#a5b4fc;">🔑 id</span> PK<br/>
+            action Enum<br/>
+            entity String<br/>
+            entityId Int<br/>
+            performedBy?<br/>
+            timestamp<br/>
+            metadata Json?
+          </div>
+        </div>
+
+        <!-- Dataset -->
+        <div style="background:rgba(16,185,129,0.05);border:1.5px solid rgba(16,185,129,0.2);border-radius:8px;padding:8px 10px;">
+          <div style="font-size:0.62rem;font-weight:800;color:#6ee7b7;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;border-bottom:1px solid rgba(16,185,129,0.15);padding-bottom:3px;">📊 Dataset</div>
+          <div style="font-size:0.62rem;color:var(--muted);line-height:1.85;">
+            <span style="color:#6ee7b7;">🔑 id</span> PK<br/>
+            name String<br/>
+            headers Json<br/>
+            rows Json<br/>
+            isActive Boolean<br/>
+            createdAt DateTime
+          </div>
+        </div>
+      </div>
+
+      <!-- Enum legend -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Enums:</span>
+        <span style="padding:2px 8px;border-radius:4px;background:rgba(16,185,129,0.12);color:#34d399;font-size:0.62rem;font-weight:600;">EmploymentStatus: ACTIVE · ON_LEAVE · RESIGNED · TERMINATED</span>
+        <span style="padding:2px 8px;border-radius:4px;background:rgba(6,182,212,0.12);color:#22d3ee;font-size:0.62rem;font-weight:600;">ProductionShift: MORNING · EVENING · NIGHT</span>
+        <span style="padding:2px 8px;border-radius:4px;background:rgba(99,102,241,0.12);color:#818cf8;font-size:0.62rem;font-weight:600;">AuditAction: CREATE · UPDATE · DELETE · PROMOTION</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 6 — PRODUCTION MANAGEMENT MODULE
+============================================================ -->
+<section>
+  <div class="slide-inner" style="flex-direction:row;padding:0;gap:0;">
+    <!-- Left: Content -->
+    <div style="flex:1;padding:32px 40px;display:flex;flex-direction:column;justify-content:center;gap:14px;overflow:hidden;">
+      <div>
+        <div class="slide-tag" style="margin-bottom:4px;">Slide 06</div>
+        <div class="slide-title" style="margin-bottom:0;">Production <span class="accent">Management Module</span></div>
+      </div>
+
+      <div class="grid-3" style="gap:10px;">
+        <div class="kpi-box">
+          <div class="kpi-label">Per Record</div>
+          <div class="kpi-value" style="font-size:0.9rem;margin-top:4px;color:#818cf8;">Units · Defects · Shift</div>
+          <div class="kpi-desc">FK to Product &amp; Employee</div>
+        </div>
+        <div class="kpi-box green">
+          <div class="kpi-label">Financials</div>
+          <div class="kpi-value" style="font-size:0.9rem;margin-top:4px;color:#34d399;">Revenue · Cost · Profit</div>
+          <div class="kpi-desc">Per-record granularity</div>
+        </div>
+        <div class="kpi-box amber">
+          <div class="kpi-label">Efficiency</div>
+          <div class="kpi-value" style="font-size:0.75rem;margin-top:4px;font-family:'Courier New';color:#fbbf24;">(U−D)/U×100</div>
+          <div class="kpi-desc">Calculated on retrieval</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:10px;">
+        <div class="card">
+          <div class="card-title" style="color:#22d3ee;">Multi-Shift Support</div>
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <div style="flex:1;padding:6px;border-radius:6px;background:rgba(6,182,212,0.1);text-align:center;font-size:0.72rem;color:#22d3ee;font-weight:700;border:1px solid rgba(6,182,212,0.2);">☀ Morning</div>
+            <div style="flex:1;padding:6px;border-radius:6px;background:rgba(245,158,11,0.1);text-align:center;font-size:0.72rem;color:#fbbf24;font-weight:700;border:1px solid rgba(245,158,11,0.2);">🌙 Evening</div>
+            <div style="flex:1;padding:6px;border-radius:6px;background:rgba(168,85,247,0.1);text-align:center;font-size:0.72rem;color:#c084fc;font-weight:700;border:1px solid rgba(168,85,247,0.2);">🌑 Night</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="color:#fb7185;">Quality Monitoring</div>
+          <ul class="bullet-list dot-list" style="gap:4px;margin-top:4px;">
+            <li>Defect rate threshold alerts</li>
+            <li>Per-product quality scoring</li>
+            <li>AI drift detection</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="padding:8px 14px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:8px;font-size:0.75rem;color:#a5b4fc;">
+        <strong>API:</strong> GET · POST · PATCH · DELETE /api/production/[id]
+      </div>
+    </div>
+
+    <!-- Right: Full-height production image -->
+    <div style="width:310px;flex-shrink:0;position:relative;overflow:hidden;">
+      <img
+        src="https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?w=620&q=90&auto=format&fit=crop"
+        alt="Manufacturing production line"
+        style="width:100%;height:100%;object-fit:cover;object-position:center;opacity:0.85;display:block;"
+      />
+      <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(15,15,20,0.7) 0%,transparent 35%,transparent 65%,rgba(15,15,20,0.3) 100%);"></div>
+      <div style="position:absolute;bottom:28px;left:0;right:0;text-align:center;padding:0 20px;">
+        <div style="font-size:0.65rem;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;">Production Floor</div>
+        <div style="font-size:0.75rem;color:rgba(255,255,255,0.65);line-height:1.4;">Real-time output tracking across shifts</div>
+      </div>
+    </div>
+
+    <!-- Top accent bar -->
+    <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--indigo),var(--cyan),var(--green));z-index:3;"></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 7 — EMPLOYEE & WORKFORCE MANAGEMENT
+============================================================ -->
+<section>
+  <div class="slide-inner" style="flex-direction:row;padding:0;gap:0;">
+
+    <!-- Left: Full-height workforce image -->
+    <div style="width:290px;flex-shrink:0;position:relative;overflow:hidden;">
+      <img
+        src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=580&q=90&auto=format&fit=crop"
+        alt="Industrial team workforce"
+        style="width:100%;height:100%;object-fit:cover;object-position:center;opacity:0.82;display:block;"
+      />
+      <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(15,15,20,0.25) 0%,transparent 50%,rgba(15,15,20,0.65) 100%);"></div>
+      <div style="position:absolute;bottom:28px;left:0;right:0;text-align:center;padding:0 16px;">
+        <div style="font-size:0.65rem;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;">Workforce</div>
+        <div style="font-size:0.75rem;color:rgba(255,255,255,0.65);line-height:1.4;">Role-based hierarchy with full lifecycle management</div>
+      </div>
+    </div>
+
+    <!-- Right: Content -->
+    <div style="flex:1;padding:28px 36px;display:flex;flex-direction:column;justify-content:center;gap:12px;overflow:hidden;">
+      <div>
+        <div class="slide-tag" style="margin-bottom:4px;">Slide 07</div>
+        <div class="slide-title" style="margin-bottom:0;">Employee &amp; <span class="accent">Workforce</span></div>
+      </div>
+
+      <div>
+        <div class="section-header sh-green" style="margin-bottom:8px;">Role Hierarchy</div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;background:rgba(168,85,247,0.1);border-radius:6px;border-left:3px solid #a855f7;">
+            <span style="font-size:0.68rem;font-weight:800;color:#c084fc;min-width:26px;">L5+</span>
+            <span style="font-size:0.8rem;color:#e2e8f0;">Management / Senior Leadership</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;background:rgba(6,182,212,0.1);border-radius:6px;border-left:3px solid #06b6d4;">
+            <span style="font-size:0.68rem;font-weight:800;color:#22d3ee;min-width:26px;">L4</span>
+            <span style="font-size:0.8rem;color:#e2e8f0;">Senior Technician / Supervisor</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;background:rgba(16,185,129,0.1);border-radius:6px;border-left:3px solid #10b981;">
+            <span style="font-size:0.68rem;font-weight:800;color:#34d399;min-width:26px;">L3</span>
+            <span style="font-size:0.8rem;color:#e2e8f0;">Mid-Level Operator</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;background:rgba(245,158,11,0.1);border-radius:6px;border-left:3px solid #f59e0b;">
+            <span style="font-size:0.68rem;font-weight:800;color:#fbbf24;min-width:26px;">L2</span>
+            <span style="font-size:0.8rem;color:#e2e8f0;">Junior Technician</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;background:rgba(99,102,241,0.1);border-radius:6px;border-left:3px solid #6366f1;">
+            <span style="font-size:0.68rem;font-weight:800;color:#818cf8;min-width:26px;">L1</span>
+            <span style="font-size:0.8rem;color:#e2e8f0;">Entry Level Worker</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="color:#818cf8;">Status Lifecycle</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center;">
+          <span class="pill green" style="font-size:0.7rem;">● Active</span>
+          <span style="color:var(--muted);">→</span>
+          <span class="pill amber" style="font-size:0.7rem;">◉ On Leave</span>
+          <span style="color:var(--muted);">→</span>
+          <span class="pill" style="font-size:0.7rem;">○ Resigned</span>
+          <span style="color:var(--muted);">→</span>
+          <span class="pill red" style="font-size:0.7rem;">✕ Terminated</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="color:#22d3ee;">Key Features</div>
+        <ul class="bullet-list dot-list" style="gap:4px;margin-top:4px;">
+          <li>Full CRUD · Dept-wise grouping</li>
+          <li>Promotion history with audit trail</li>
+          <li>AI-powered employee management</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Top accent bar -->
+    <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--green),var(--cyan),var(--indigo));z-index:3;"></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 8 — AI-POWERED ANALYTICS
+============================================================ -->
+<section>
+  <div class="slide-inner" style="flex-direction:row;padding:0;gap:0;">
+
+    <!-- Left: content pane -->
+    <div style="flex:1;padding:36px 44px 28px 52px;display:flex;flex-direction:column;justify-content:flex-start;position:relative;overflow:hidden;min-width:0;">
+      <!-- top accent bar -->
+      <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--purple),var(--indigo),var(--cyan));z-index:3;"></div>
+      <div class="slide-tag" style="margin-top:10px;">Slide 08</div>
+      <div class="slide-title" style="margin-bottom:16px;"><span class="accent">AI-Powered</span> Analytics</div>
+
+      <!-- AI Engine badge row -->
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);border-radius:8px;margin-bottom:14px;flex-shrink:0;">
+        <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#a855f7,#6366f1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;">&#129302;</div>
+        <div>
+          <div style="font-size:0.68rem;font-weight:700;color:#c084fc;letter-spacing:0.12em;text-transform:uppercase;">AI Engine</div>
+          <div style="font-size:0.88rem;color:#e2e8f0;font-weight:600;margin-top:2px;">Groq Cloud API &nbsp;·&nbsp; <span class="mono" style="color:#c084fc;">llama-3.3-70b-versatile</span></div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:6px;">
+          <span style="padding:3px 8px;border-radius:5px;background:rgba(16,185,129,0.15);color:#34d399;font-size:0.65rem;font-weight:700;border:1px solid rgba(16,185,129,0.3);">LOW LATENCY</span>
+          <span style="padding:3px 8px;border-radius:5px;background:rgba(99,102,241,0.15);color:#818cf8;font-size:0.65rem;font-weight:700;border:1px solid rgba(99,102,241,0.3);">STREAMING</span>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:11px;flex:1;">
+        <div class="card" style="border-left:3px solid #6366f1;">
+          <div class="card-title" style="color:#818cf8;">&#128202; Production Forecast</div>
+          <div class="card-body">Predicts next-period unit output and defect count from historical trends. Confidence ranges with contributing factors.</div>
+        </div>
+        <div class="card" style="border-left:3px solid #f43f5e;">
+          <div class="card-title" style="color:#fb7185;">&#9888; Anomaly Detection</div>
+          <div class="card-body">Statistical spike detection across daily buckets. Flags outliers beyond 2σ threshold with severity and root-cause hints.</div>
+        </div>
+        <div class="card" style="border-left:3px solid #10b981;">
+          <div class="card-title" style="color:#34d399;">&#128101; Workforce Analytics</div>
+          <div class="card-body">Benchmarks employee output vs. department averages. Identifies top performers and skill gap opportunities.</div>
+        </div>
+        <div class="card" style="border-left:3px solid #f59e0b;">
+          <div class="card-title" style="color:#fbbf24;">&#127919; Quality Control AI</div>
+          <div class="card-body">Generates QC score (0–100) with animated confidence arc. Category classification and improvement recommendations.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: full-height AI image panel -->
+    <div style="width:310px;flex-shrink:0;position:relative;overflow:hidden;">
+      <img
+        src="https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=620&q=85&auto=format&fit=crop"
+        alt="AI artificial intelligence neural network"
+        style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;"
+      />
+      <!-- gradient overlay: dark on left edge to blend, semi-transparent overall -->
+      <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(15,10,30,0.72) 0%,rgba(15,10,30,0.18) 40%,rgba(15,10,30,0.1) 100%);"></div>
+      <!-- subtle purple tint -->
+      <div style="position:absolute;inset:0;background:rgba(168,85,247,0.12);"></div>
+      <!-- vertical label -->
+      <div style="position:absolute;bottom:32px;left:50%;transform:translateX(-50%);text-align:center;">
+        <div style="font-size:0.62rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(192,132,252,0.9);white-space:nowrap;">Groq AI Engine</div>
+      </div>
+      <!-- top gradient bar -->
+      <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--purple),var(--indigo));"></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 9 — DECISION INTELLIGENCE SYSTEM
+============================================================ -->
+<section>
+  <div class="slide-inner">
+    <div class="slide-tag">Slide 09</div>
+    <div class="slide-title">Decision <span class="accent">Intelligence System</span></div>
+
+    <div class="flex-1" style="display:flex;flex-direction:column;justify-content:center;gap:14px;">
+
+      <div style="display:flex;align-items:center;gap:16px;padding:12px 16px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);">
+        <div style="text-align:center;min-width:80px;">
+          <div style="font-size:2rem;font-weight:900;background:linear-gradient(135deg,#818cf8,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;">IPI</div>
+          <div style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">0 – 100 Score</div>
+        </div>
+        <div>
+          <div style="font-size:0.88rem;color:#e2e8f0;font-weight:600;margin-bottom:4px;">Industrial Performance Index</div>
+          <div style="font-size:0.8rem;color:var(--muted);">Composite score measuring overall operational health across 4 strategic pillars</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+          <span style="padding:4px 10px;border-radius:6px;background:rgba(16,185,129,0.15);color:#34d399;font-size:0.72rem;font-weight:700;border:1px solid rgba(16,185,129,0.3);">&#9679; Optimized</span>
+          <span style="padding:4px 10px;border-radius:6px;background:rgba(245,158,11,0.15);color:#fbbf24;font-size:0.72rem;font-weight:700;border:1px solid rgba(245,158,11,0.3);">&#9632; Moderate</span>
+          <span style="padding:4px 10px;border-radius:6px;background:rgba(244,63,94,0.15);color:#fb7185;font-size:0.72rem;font-weight:700;border:1px solid rgba(244,63,94,0.3);">&#9650; At Risk</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-header sh-indigo" style="margin-bottom:10px;">4 Strategic Pillars</div>
+        <div class="progress-row">
+          <div class="progress-label"><span>&#9881; Efficiency</span><span style="color:#818cf8;font-weight:700;">30%</span></div>
+          <div class="progress-track"><div class="progress-fill" style="width:30%;"></div></div>
+        </div>
+        <div class="progress-row">
+          <div class="progress-label"><span>&#127919; Quality</span><span style="color:#34d399;font-weight:700;">25%</span></div>
+          <div class="progress-track"><div class="progress-fill green" style="width:25%;"></div></div>
+        </div>
+        <div class="progress-row">
+          <div class="progress-label"><span>&#128101; Workforce</span><span style="color:#22d3ee;font-weight:700;">20%</span></div>
+          <div class="progress-track"><div class="progress-fill cyan" style="width:20%;"></div></div>
+        </div>
+        <div class="progress-row">
+          <div class="progress-label"><span>&#128176; Financial</span><span style="color:#fbbf24;font-weight:700;">25%</span></div>
+          <div class="progress-track"><div class="progress-fill amber" style="width:25%;"></div></div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:10px;">
+        <div style="padding:8px 12px;background:rgba(99,102,241,0.08);border-radius:6px;border:1px solid var(--border);font-size:0.8rem;color:#a5b4fc;">
+          <strong>AI Predictions Panel</strong> — forecasted output and trend direction from Groq AI
+        </div>
+        <div style="padding:8px 12px;background:rgba(244,63,94,0.08);border-radius:6px;border:1px solid rgba(244,63,94,0.2);font-size:0.8rem;color:#fda4af;">
+          <strong>Anomaly Detection Panel</strong> — active flags, severity classification, timestamps
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 10 — REAL-TIME DASHBOARD
+============================================================ -->
+<section>
+  <div class="slide-inner" style="flex-direction:row;padding:0;gap:0;">
+
+    <!-- Left: full-height dashboard image panel -->
+    <div style="width:300px;flex-shrink:0;position:relative;overflow:hidden;">
+      <img
+        src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=85&auto=format&fit=crop"
+        alt="Analytics dashboard on screen"
+        style="width:100%;height:100%;object-fit:cover;object-position:center 40%;display:block;"
+      />
+      <!-- gradient: dark on right edge to blend into content -->
+      <div style="position:absolute;inset:0;background:linear-gradient(270deg,rgba(15,15,20,0.75) 0%,rgba(15,15,20,0.2) 45%,rgba(15,15,20,0.1) 100%);"></div>
+      <!-- cyan tint overlay -->
+      <div style="position:absolute;inset:0;background:rgba(6,182,212,0.08);"></div>
+      <!-- LIVE badge overlay -->
+      <div style="position:absolute;top:24px;left:50%;transform:translateX(-50%);display:flex;gap:6px;">
+        <span style="padding:4px 10px;border-radius:6px;background:rgba(16,185,129,0.25);color:#34d399;font-size:0.68rem;font-weight:700;border:1px solid rgba(16,185,129,0.4);backdrop-filter:blur(4px);">● LIVE</span>
+        <span style="padding:4px 10px;border-radius:6px;background:rgba(99,102,241,0.25);color:#818cf8;font-size:0.68rem;font-weight:700;border:1px solid rgba(99,102,241,0.4);backdrop-filter:blur(4px);">SSE</span>
+      </div>
+      <!-- vertical label -->
+      <div style="position:absolute;bottom:28px;left:50%;transform:translateX(-50%);text-align:center;">
+        <div style="font-size:0.62rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(103,232,249,0.9);white-space:nowrap;">Live Operations</div>
+      </div>
+      <!-- top accent bar -->
+      <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--cyan),var(--indigo));"></div>
+    </div>
+
+    <!-- Right: content pane -->
+    <div style="flex:1;padding:36px 52px 28px 44px;display:flex;flex-direction:column;justify-content:flex-start;position:relative;overflow:hidden;min-width:0;">
+      <!-- top accent bar -->
+      <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--cyan),var(--indigo),var(--green));z-index:3;"></div>
+      <div class="slide-tag" style="margin-top:10px;">Slide 10</div>
+      <div class="slide-title" style="margin-bottom:16px;">Real-Time <span class="accent">Dashboard</span></div>
+
+      <!-- KPI row -->
+      <div class="grid-4" style="gap:9px;margin-bottom:12px;flex-shrink:0;">
+        <div class="kpi-box">
+          <div class="kpi-label">Production</div>
+          <div class="kpi-value">&#128202;</div>
+          <div class="kpi-desc">Total units across all shifts</div>
+        </div>
+        <div class="kpi-box green">
+          <div class="kpi-label">Workforce</div>
+          <div class="kpi-value">&#128101;</div>
+          <div class="kpi-desc">Active employees now</div>
+        </div>
+        <div class="kpi-box cyan">
+          <div class="kpi-label">Efficiency</div>
+          <div class="kpi-value">&#9881;</div>
+          <div class="kpi-desc">Avg across all records</div>
+        </div>
+        <div class="kpi-box red">
+          <div class="kpi-label">Defect Rate</div>
+          <div class="kpi-value">&#9888;</div>
+          <div class="kpi-desc">Defects / units produced</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:11px;flex:1;">
+        <div class="card">
+          <div class="card-title" style="color:#818cf8;">&#128202; Charts &amp; Visualizations</div>
+          <ul class="bullet-list dot-list" style="gap:5px;margin-top:4px;">
+            <li>Production trend (Line + Bar, Recharts)</li>
+            <li>Efficiency over time with threshold line</li>
+            <li>Department-wise breakdown pie chart</li>
+            <li>Color-coded status badges on rows</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-title" style="color:#34d399;">&#9889; Real-Time Event System</div>
+          <ul class="bullet-list dot-list" style="gap:5px;margin-top:4px;">
+            <li>Server-Sent Events (SSE) push updates</li>
+            <li>No reload needed — instant UI refresh</li>
+            <li>All pages share same event bus</li>
+            <li>AI chat assistant on every page</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- AI footer strip -->
+      <div style="padding:8px 14px;background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.2);border-radius:6px;font-size:0.78rem;color:#67e8f9;display:flex;align-items:center;gap:8px;margin-top:11px;flex-shrink:0;">
+        <span style="font-size:0.9rem;">&#129302;</span>
+        <span><strong>FactoryFlow AI:</strong> Natural language CRUD, instant analytics, floating chat on every page</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 11 — SMART DATASET IMPORT
+============================================================ -->
+<section>
+  <div class="slide-inner" style="flex-direction:row;padding:0;gap:0;">
+
+    <!-- Left: content pane -->
+    <div style="flex:1;padding:36px 44px 28px 52px;display:flex;flex-direction:column;justify-content:flex-start;position:relative;overflow:hidden;min-width:0;">
+      <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--green),var(--cyan),var(--indigo));z-index:3;"></div>
+      <div class="slide-tag" style="margin-top:10px;">Slide 11</div>
+      <div class="slide-title" style="margin-bottom:14px;">Smart <span class="accent">Dataset Import</span></div>
+
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(16,185,129,0.09);border:1px solid rgba(16,185,129,0.25);border-radius:8px;margin-bottom:13px;flex-shrink:0;">
+        <div style="width:34px;height:34px;border-radius:8px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;">&#128202;</div>
+        <div>
+          <div style="font-size:0.7rem;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:0.1em;">AI-Powered CSV Ingestion</div>
+          <div style="font-size:0.82rem;color:#e2e8f0;margin-top:2px;">Upload any Kaggle or custom CSV — auto-detect type and map columns</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:11px;flex:1;">
+        <div class="card" style="border-left:3px solid #10b981;">
+          <div class="card-title" style="color:#34d399;">&#129302; Auto-Detection</div>
+          <div class="card-body">Scores column headers against keyword lists to detect Employee vs Production type automatically — no manual selection needed.</div>
+        </div>
+        <div class="card" style="border-left:3px solid #06b6d4;">
+          <div class="card-title" style="color:#22d3ee;">&#128279; Smart Mapping</div>
+          <div class="card-body">Maps qty/output→units, emp_id→employeeCode, full_name→name. Adjustable per column via dropdown UI.</div>
+        </div>
+        <div class="card" style="border-left:3px solid #6366f1;">
+          <div class="card-title" style="color:#818cf8;">&#9989; Validation Layer</div>
+          <div class="card-body">Status enums enforced, dates parsed, unknown depts/roles resolved to defaults. Errors reported row-by-row after import.</div>
+        </div>
+        <div class="card" style="border-left:3px solid #f59e0b;">
+          <div class="card-title" style="color:#fbbf24;">&#9889; Instant Sync</div>
+          <div class="card-body">Imported records immediately update dashboard KPIs, AI context, and all charts via event bus — no page reload.</div>
+        </div>
+      </div>
+
+      <!-- 3-step flow -->
+      <div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-shrink:0;">
+        {['1. Upload CSV', '2. Map Columns', '3. Import & Sync'].map((s,i) => (
+          `<div style="flex:1;padding:7px 10px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:7px;text-align:center;">
+            <div style="font-size:0.7rem;font-weight:700;color:#34d399;">${s}</div>
+          </div>`
+        ))}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-shrink:0;">
+        <div style="flex:1;padding:7px 10px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:7px;text-align:center;">
+          <div style="font-size:0.7rem;font-weight:700;color:#34d399;">1. Upload CSV</div>
+        </div>
+        <div style="font-size:0.8rem;color:var(--muted);">→</div>
+        <div style="flex:1;padding:7px 10px;background:rgba(6,182,212,0.07);border:1px solid rgba(6,182,212,0.2);border-radius:7px;text-align:center;">
+          <div style="font-size:0.7rem;font-weight:700;color:#22d3ee;">2. Map Columns</div>
+        </div>
+        <div style="font-size:0.8rem;color:var(--muted);">→</div>
+        <div style="flex:1;padding:7px 10px;background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.2);border-radius:7px;text-align:center;">
+          <div style="font-size:0.7rem;font-weight:700;color:#818cf8;">3. Import &amp; Sync</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: full-height data visualization image -->
+    <div style="width:290px;flex-shrink:0;position:relative;overflow:hidden;">
+      <img
+        src="https://images.unsplash.com/photo-1543286386-713bdd548da4?w=580&q=85&auto=format&fit=crop"
+        alt="Data analytics and spreadsheet visualization"
+        style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;"
+      />
+      <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(15,15,20,0.75) 0%,rgba(15,15,20,0.2) 50%,rgba(15,15,20,0.05) 100%);"></div>
+      <div style="position:absolute;inset:0;background:rgba(16,185,129,0.08);"></div>
+      <div style="position:absolute;bottom:28px;left:50%;transform:translateX(-50%);text-align:center;">
+        <div style="font-size:0.62rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(52,211,153,0.9);white-space:nowrap;">CSV Import</div>
+      </div>
+      <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--green),var(--cyan));"></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 12 — TECHNOLOGY STACK
+============================================================ -->
+<section>
+  <div class="slide-inner">
+    <div class="slide-tag">Slide 11</div>
+    <div class="slide-title">Technology <span class="accent">Stack</span></div>
+
+    <div class="flex-1" style="display:flex;flex-direction:column;justify-content:center;gap:16px;">
+
+      <div class="grid-2" style="gap:16px;">
+
+        <div>
+          <div class="section-header sh-indigo" style="margin-bottom:10px;">Frontend</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:7px;border:1px solid rgba(99,102,241,0.15);">
+              <span style="font-size:0.82rem;color:#e2e8f0;font-weight:600;">Next.js 14</span>
+              <span class="pill" style="font-size:0.68rem;">App Router</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:7px;border:1px solid rgba(99,102,241,0.15);">
+              <span style="font-size:0.82rem;color:#e2e8f0;font-weight:600;">React 18</span>
+              <span class="pill" style="font-size:0.68rem;">Server Components</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:7px;border:1px solid rgba(16,185,129,0.15);">
+              <span style="font-size:0.82rem;color:#e2e8f0;font-weight:600;">TailwindCSS</span>
+              <span class="pill green" style="font-size:0.68rem;">Utility-first CSS</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:7px;border:1px solid rgba(245,158,11,0.15);">
+              <span style="font-size:0.82rem;color:#e2e8f0;font-weight:600;">Recharts</span>
+              <span class="pill amber" style="font-size:0.68rem;">Data Visualization</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:7px;border:1px solid rgba(168,85,247,0.15);">
+              <span style="font-size:0.82rem;color:#e2e8f0;font-weight:600;">Framer Motion</span>
+              <span class="pill purple" style="font-size:0.68rem;">Animations</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <div class="section-header sh-green" style="margin-bottom:10px;">Backend &amp; Database</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:7px;border:1px solid rgba(16,185,129,0.15);">
+                <span style="font-size:0.82rem;color:#e2e8f0;font-weight:600;">PostgreSQL</span>
+                <span class="pill green" style="font-size:0.68rem;">Relational DB</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:7px;border:1px solid rgba(6,182,212,0.15);">
+                <span style="font-size:0.82rem;color:#e2e8f0;font-weight:600;">Prisma ORM</span>
+                <span class="pill cyan" style="font-size:0.68rem;">Type-safe queries</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:7px;border:1px solid rgba(99,102,241,0.15);">
+                <span style="font-size:0.82rem;color:#e2e8f0;font-weight:600;">Next.js API Routes</span>
+                <span class="pill" style="font-size:0.68rem;">REST Endpoints</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="section-header sh-purple" style="margin-bottom:10px;">AI &amp; DevOps</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:7px;border:1px solid rgba(168,85,247,0.15);">
+                <span style="font-size:0.82rem;color:#e2e8f0;font-weight:600;">Groq Cloud AI</span>
+                <span class="pill purple" style="font-size:0.68rem;">llama-3.3-70b</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:7px;border:1px solid rgba(245,158,11,0.15);">
+                <span style="font-size:0.82rem;color:#e2e8f0;font-weight:600;">PDFKit</span>
+                <span class="pill amber" style="font-size:0.68rem;">Report Generation</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:7px;border:1px solid rgba(16,185,129,0.15);">
+                <span style="font-size:0.82rem;color:#e2e8f0;font-weight:600;">Vercel</span>
+                <span class="pill green" style="font-size:0.68rem;">Deployment</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 13 — KEY RESULTS & METRICS
+============================================================ -->
+<section>
+  <div class="slide-inner">
+    <div class="slide-tag">Slide 13</div>
+    <div class="slide-title">Key Results <span class="accent">&amp; Metrics</span></div>
+
+    <div class="flex-1" style="display:flex;flex-direction:column;justify-content:center;gap:14px;">
+
+      <div class="grid-4" style="gap:10px;">
+        <div class="kpi-box">
+          <div class="kpi-label">DB Models</div>
+          <div class="kpi-value">8</div>
+          <div class="kpi-desc">Core relational entities</div>
+        </div>
+        <div class="kpi-box green">
+          <div class="kpi-label">API Endpoints</div>
+          <div class="kpi-value">30+</div>
+          <div class="kpi-desc">RESTful routes covered</div>
+        </div>
+        <div class="kpi-box amber">
+          <div class="kpi-label">PDF Pages</div>
+          <div class="kpi-value">9</div>
+          <div class="kpi-desc">Auto-generated sections</div>
+        </div>
+        <div class="kpi-box purple">
+          <div class="kpi-label">AI Analysis</div>
+          <div class="kpi-value">5</div>
+          <div class="kpi-desc">Types of AI modules</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:12px;">
+        <div class="card">
+          <div class="card-title" style="color:#34d399;">&#9889; Real-Time Sync</div>
+          <div class="card-body" style="font-size:0.85rem;">Server-Sent Events keep all pages synchronized — production updates, employee changes, and AI results propagate instantly without polling or page reload.</div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="color:#c084fc;">&#129302; FactoryFlow AI</div>
+          <div class="card-body" style="font-size:0.85rem;">Natural language DBMS interface — users can query data, add records, request reports, and get analytics through conversational AI commands.</div>
+        </div>
+      </div>
+
+      <div style="padding:12px 16px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);">
+        <div class="section-header sh-indigo" style="margin-bottom:8px;">AI Module Coverage</div>
+        <div class="pill-group">
+          <span class="pill" style="font-size:0.72rem;">&#128202; Production Forecast</span>
+          <span class="pill red" style="font-size:0.72rem;">&#9888; Anomaly Detection</span>
+          <span class="pill green" style="font-size:0.72rem;">&#128101; Workforce Benchmark</span>
+          <span class="pill amber" style="font-size:0.72rem;">&#127919; Quality Control</span>
+          <span class="pill purple" style="font-size:0.72rem;">&#128161; Strategic Insights</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 14 — PDF REPORT GENERATION
+============================================================ -->
+<section>
+  <div class="slide-inner">
+    <div class="slide-tag">Slide 14</div>
+    <div class="slide-title">PDF Report <span class="accent">Generation</span></div>
+
+    <div class="flex-1" style="display:flex;flex-direction:column;justify-content:center;gap:14px;">
+
+      <div style="display:flex;align-items:center;gap:14px;padding:10px 16px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;">
+        <span style="font-size:1.8rem;">&#128196;</span>
+        <div>
+          <div style="font-size:0.88rem;color:#fbbf24;font-weight:700;">Auto-Generated 9-Page Professional PDF Report</div>
+          <div style="font-size:0.78rem;color:var(--muted);">Built with PDFKit &nbsp;·&nbsp; White professional theme &nbsp;·&nbsp; Instant download from Export Reports page</div>
+        </div>
+      </div>
+
+      <div class="grid-3" style="gap:10px;">
+        <div style="padding:10px 12px;background:var(--surface);border-radius:8px;border-top:2px solid #6366f1;">
+          <div style="font-size:0.68rem;font-weight:800;color:#818cf8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;">Pages 1–3</div>
+          <ul style="font-size:0.78rem;color:var(--text);list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:3px;">
+            <li>&#128202; KPI Summary</li>
+            <li>&#128200; Monthly Trend</li>
+            <li>&#128293; Product Breakdown</li>
+          </ul>
+        </div>
+        <div style="padding:10px 12px;background:var(--surface);border-radius:8px;border-top:2px solid #10b981;">
+          <div style="font-size:0.68rem;font-weight:800;color:#34d399;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;">Pages 4–6</div>
+          <ul style="font-size:0.78rem;color:var(--text);list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:3px;">
+            <li>&#127970; Department Performance</li>
+            <li>&#128101; Workforce Analysis</li>
+            <li>&#128176; Financial Summary</li>
+          </ul>
+        </div>
+        <div style="padding:10px 12px;background:var(--surface);border-radius:8px;border-top:2px solid #a855f7;">
+          <div style="font-size:0.68rem;font-weight:800;color:#c084fc;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;">Pages 7–9</div>
+          <ul style="font-size:0.78rem;color:var(--text);list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:3px;">
+            <li>&#9888; Defect Risk Report</li>
+            <li>&#129302; AI Insights</li>
+            <li>&#128161; Recommendations</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:12px;">
+        <div class="card">
+          <div class="card-title" style="color:#c084fc;">AI Commentary</div>
+          <div class="card-body">Each report section includes AI-generated strategic commentary via Groq — contextual, data-driven narrative beyond raw numbers.</div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="color:#fbbf24;">Professional Design</div>
+          <div class="card-body">White background, colored section accents, structured tables, summary boxes — boardroom-ready format with live organizational data.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 15 — CONCLUSION & FUTURE SCOPE
+============================================================ -->
+<section>
+  <div class="slide-inner">
+    <div class="slide-tag">Slide 15</div>
+    <div class="slide-title">Conclusion <span class="accent">&amp; Future Scope</span></div>
+
+    <div class="flex-1" style="display:flex;flex-direction:column;justify-content:center;gap:14px;">
+
+      <div class="grid-2" style="gap:16px;">
+
+        <div>
+          <div class="section-header sh-green" style="margin-bottom:10px;">Conclusion</div>
+          <ul class="bullet-list" style="gap:9px;">
+            <li>
+              <span class="num" style="background:#10b981;">&#10003;</span>
+              <span>FactoryFlow DBMS <strong>demonstrates how a well-designed DBMS transforms industrial operations</strong> — from data chaos to structured, queryable insight</span>
+            </li>
+            <li>
+              <span class="num" style="background:#6366f1;">&#10003;</span>
+              <span><strong>Reduced manual errors</strong>, enabled real-time decisions, and delivered AI-powered analytics at every management level</span>
+            </li>
+            <li>
+              <span class="num" style="background:#f59e0b;color:#000;">&#10003;</span>
+              <span>Measurable improvement in <strong>efficiency tracking, workforce management</strong>, and financial visibility through structured data</span>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="section-header sh-cyan" style="margin-bottom:10px;">Future Scope</div>
+          <ul class="bullet-list" style="gap:9px;">
+            <li>
+              <span class="num" style="background:#06b6d4;color:#000;">&#9658;</span>
+              <span><strong>IoT sensor integration</strong> — live machine telemetry feeding directly into production records</span>
+            </li>
+            <li>
+              <span class="num" style="background:#a855f7;">&#9658;</span>
+              <span><strong>Apache Kafka</strong> for real-time stream processing at BigData scale</span>
+            </li>
+            <li>
+              <span class="num" style="background:#f59e0b;color:#000;">&#9658;</span>
+              <span><strong>Mobile application</strong> for floor managers — React Native with offline-first capabilities</span>
+            </li>
+            <li>
+              <span class="num" style="background:#10b981;">&#9658;</span>
+              <span><strong>ML predictive maintenance</strong> — failure prediction before equipment breakdown</span>
+            </li>
+            <li>
+              <span class="num" style="background:#6366f1;">&#9658;</span>
+              <span><strong>Multi-factory / multi-tenant</strong> architecture with tenant-isolated schemas</span>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 16 — THANK YOU (FINAL)
+============================================================ -->
+<section class="thankyou-slide">
+  <div class="slide-inner" style="justify-content:center;align-items:center;text-align:center;padding:0;position:relative;overflow:hidden;">
+
+    <!-- Full background factory image -->
+    <div style="position:absolute;inset:0;z-index:0;">
+      <img
+        src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&q=80&auto=format&fit=crop"
+        alt="Industrial technology background"
+        style="width:100%;height:100%;object-fit:cover;opacity:0.15;"
+      />
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(15,15,20,0.3) 0%,rgba(15,15,20,0.92) 70%);"></div>
+    </div>
+
+    <!-- Decorative rings -->
+    <div style="position:absolute;width:500px;height:500px;border-radius:50%;border:1px solid rgba(99,102,241,0.1);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:1;"></div>
+    <div style="position:absolute;width:340px;height:340px;border-radius:50%;border:1px solid rgba(99,102,241,0.18);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:1;"></div>
+    <div style="position:absolute;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.06) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:1;"></div>
+
+    <!-- Content -->
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:32px;">
+
+      <!-- Thank You heading -->
+      <div>
+        <div class="thankyou-title" style="margin-bottom:6px;">Thank You</div>
+        <div style="font-size:0.95rem;color:var(--muted);letter-spacing:0.06em;">FactoryFlow DBMS — Group G19 Project</div>
+      </div>
+
+      <!-- Team Members -->
+      <div>
+        <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.18em;color:rgba(99,102,241,0.7);margin-bottom:14px;">Team Members</div>
+        <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+          <div style="padding:12px 22px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.28);border-radius:10px;text-align:center;">
+            <div style="font-size:0.9rem;font-weight:700;color:#e2e8f0;">Kartik</div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">2822530</div>
+          </div>
+          <div style="padding:12px 22px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.28);border-radius:10px;text-align:center;">
+            <div style="font-size:0.9rem;font-weight:700;color:#e2e8f0;">Sushant</div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">2822532</div>
+          </div>
+          <div style="padding:12px 22px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.28);border-radius:10px;text-align:center;">
+            <div style="font-size:0.9rem;font-weight:700;color:#e2e8f0;">Shubham Pangal</div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">2822512</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Guide -->
+      <div style="padding:12px 28px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.22);border-radius:10px;">
+        <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:rgba(52,211,153,0.7);margin-bottom:4px;">Project Guide</div>
+        <div style="font-size:0.95rem;font-weight:700;color:#34d399;">Dr. B.K. Verma</div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Panipat Institute of Engineering &amp; Technology</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+</div><!-- /.slides -->
+</div><!-- /.reveal -->
+
+<!-- Reveal.js Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4/dist/reveal.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: true,
+    transition: 'slide',
+    transitionSpeed: 'default',
+    backgroundTransition: 'fade',
+    controls: true,
+    progress: true,
+    center: false,
+    width: 1200,
+    height: 700,
+    margin: 0.04,
+    minScale: 0.2,
+    maxScale: 2.0,
+    plugins: []
+  });
+</script>
+</body>
+</html>

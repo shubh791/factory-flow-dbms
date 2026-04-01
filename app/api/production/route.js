@@ -60,67 +60,48 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { units, defects, productId, shift, employeeId } = body;
+    const { units, defects, productId, shift, employeeId, productionDate } = body;
 
-    if (!employeeId) {
-      return NextResponse.json(
-        { error: "Employee ID is required" },
-        { status: 400 }
-      );
-    }
-
-    const parsedUnits = Number(units) || 0;
+    const parsedUnits   = Number(units)   || 0;
     const parsedDefects = Number(defects) || 0;
 
+    if (parsedUnits <= 0) {
+      return NextResponse.json({ error: 'Units must be greater than 0' }, { status: 400 });
+    }
     if (parsedDefects > parsedUnits) {
-      return NextResponse.json(
-        { error: "Defects cannot exceed produced units" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Defects cannot exceed produced units' }, { status: 400 });
+    }
+    if (!productId) {
+      return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
 
-    const product = await prisma.product.findUnique({
-      where: { id: Number(productId) },
-    });
-
+    const product = await prisma.product.findUnique({ where: { id: Number(productId) } });
     if (!product) {
-      return NextResponse.json(
-        { error: "Product not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
-
-    const unitPrice = product.unitPrice || 20;
-    const unitCost = product.unitCost || 10;
-
-    /* ================= INDUSTRIAL CALCULATION ================= */
 
     const goodUnits = parsedUnits - parsedDefects;
-
-    const revenue = goodUnits * unitPrice;
-    const cost = parsedUnits * unitCost;
-    const profit = revenue - cost;
+    const revenue   = goodUnits * (product.unitPrice || 0);
+    const cost      = parsedUnits * (product.unitCost || 0);
 
     const record = await prisma.production.create({
       data: {
-        units: parsedUnits,
-        defects: parsedDefects,
-        productId: Number(productId),
-        employeeId: Number(employeeId),
-        shift: shift || "MORNING",
-        productionDate: new Date(),
+        units:          parsedUnits,
+        defects:        parsedDefects,
+        productId:      Number(productId),
+        employeeId:     employeeId ? Number(employeeId) : null,
+        shift:          shift || 'MORNING',
+        productionDate: productionDate ? new Date(productionDate) : new Date(),
         revenue,
         cost,
-        profit,
+        profit: revenue - cost,
       },
+      include: { product: true, employee: true },
     });
 
     return NextResponse.json(record);
   } catch (error) {
-    console.error("Production Create Error:", error);
-    return NextResponse.json(
-      { error: "Production record failed" },
-      { status: 500 }
-    );
+    console.error('Production Create Error:', error);
+    return NextResponse.json({ error: 'Production record failed' }, { status: 500 });
   }
 }

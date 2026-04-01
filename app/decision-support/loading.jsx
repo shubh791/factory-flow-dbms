@@ -1,11 +1,11 @@
-export default function Loading() {
+export default function DecisionSupportLoading() {
   return (
-    <div className="space-y-5 p-1 animate-pulse">
-      <div className="h-14 rounded-xl" style={{ background: '#17171c' }} />
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        {[0,1,2].map(i => <div key={i} className="h-28 rounded-xl" style={{ background: '#17171c' }} />)}
+    <div className="p-6 space-y-6">
+      <div className="skeleton h-8 w-64 mb-4" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-48 rounded-xl" />)}
       </div>
-      <div className="h-80 rounded-xl" style={{ background: '#17171c' }} />
+      <div className="skeleton h-64 rounded-xl" />
     </div>
   );
 }

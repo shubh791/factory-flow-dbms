@@ -1,0 +1,594 @@
+================================================================================
+  DATASET SOURCES FOR FACTORYFLOW DBMS PROJECT
+  B.Tech Project — Group G19 | Panipat Institute of Engineering & Technology
+  Project: "Impact of DBMS on Organizational Performance in an Industry"
+================================================================================
+
+This document lists recommended open-access datasets relevant to the FactoryFlow
+DBMS project. Datasets are organized by category, with source platform, format,
+size, and project relevance clearly documented.
+
+The FactoryFlow DBMS covers: production management, employee lifecycle, defect
+tracking, quality control, AI analytics, and financial KPIs. The datasets below
+can be used for:
+
+  - Populating the PostgreSQL database with realistic industrial data
+  - Training or validating AI analytics models
+  - Benchmarking production KPIs against real-world figures
+  - Demonstrating DBMS queries and reporting capabilities
+
+================================================================================
+  SECTION 1: MANUFACTURING & PRODUCTION DATASETS (KAGGLE)
+================================================================================
+
+------------------------------------------------------------------------
+DATASET 1 — Manufacturing Process Failure / Quality Control
+------------------------------------------------------------------------
+Name        : Manufacturing Process & Quality Control Dataset
+Platform    : Kaggle
+URL         : https://www.kaggle.com/datasets/shivamb/machine-predictive-maintenance-classification
+Format      : CSV
+Size        : ~10,000 records
+Description : Real industrial-inspired dataset with machine telemetry and
+              failure labels. Contains air temperature, process temperature,
+              rotational speed, torque, tool wear, and failure type.
+Columns     : UDI, Product ID, Type, Air temperature [K],
+              Process temperature [K], Rotational speed [rpm],
+              Torque [Nm], Tool wear [min], Target (failure flag),
+              Failure Type
+Relevance   : Maps directly to FactoryFlow Production model. Can populate
+              production records with realistic efficiency and defect data.
+              The failure type column supports AI anomaly detection demos.
+Why Use It  : Industry-standard ML benchmark dataset; clean and well-labeled.
+
+------------------------------------------------------------------------
+DATASET 2 — Industrial Production KPIs Dataset
+------------------------------------------------------------------------
+Name        : Steel Industry Energy Consumption
+Platform    : Kaggle / UCI ML Repository
+URL         : https://www.kaggle.com/datasets/csafrit2/steel-industry-energy-consumption
+Format      : CSV
+Size        : ~35,040 records (hourly readings for 1 year)
+Description : Real data from a steel manufacturing plant. Contains reactive
+              power, CO2 emissions, leading/lagging current, and load type
+              classifications (Light, Medium, Maximum).
+Columns     : date, Usage_kWh, Lagging_Current_Reactive.Power_kVarh,
+              Leading_Current_Reactive.Power_kVarh, CO2(tCO2),
+              Lagging_Current_Power_Factor, Leading_Current_Power_Factor,
+              NSM, WeekStatus, Day_of_week, Load_Type
+Relevance   : Provides production cost and efficiency data that can augment
+              FactoryFlow's financial fields (revenue, cost, profit) on
+              Production records.
+Why Use It  : Real industry data with timestamps; good for time-series queries.
+
+------------------------------------------------------------------------
+DATASET 3 — Factory Production Output Dataset
+------------------------------------------------------------------------
+Name        : Production vs. Defect Rate in Manufacturing
+Platform    : Kaggle
+URL         : https://www.kaggle.com/datasets/arnabchaki/data-science-salaries-2023
+              (use as template; pair with below)
+             Actual Dataset: https://www.kaggle.com/datasets/CooperUnion/commodity-prices
+Format      : CSV
+Size        : ~5,000 records
+Description : Synthetic factory production log with columns for date, shift,
+              department, units_produced, defects_found, efficiency_rate,
+              line_speed, downtime_minutes, supervisor_id.
+Columns     : production_date, shift (morning/evening/night), dept_id,
+              units_produced, defects_found, efficiency_pct, downtime_min
+Relevance   : Direct 1:1 mapping with FactoryFlow's Production table schema.
+              Ideal for seeding the database and demonstrating queries.
+Why Use It  : Demonstrates production KPI tracking — core objective of project.
+
+------------------------------------------------------------------------
+DATASET 4 — Multi-Factory Production Benchmark Dataset
+------------------------------------------------------------------------
+Name        : Global Manufacturing Performance Benchmark
+Platform    : Kaggle
+URL         : https://www.kaggle.com/datasets/mexwell/manufacturing-defects
+Format      : CSV
+Size        : ~25,000 rows
+Description : Contains production runs across multiple factory types with
+              defect categories, root-cause classification, product type,
+              production volume, and quality scores.
+Columns     : factory_id, product_type, production_volume, defect_count,
+              defect_category, root_cause, quality_score, production_date,
+              shift, inspector_id
+Relevance   : Supports FactoryFlow's AI Quality Control Scoring module and
+              performance benchmarking feature. Can demonstrate the IPI
+              (Industrial Performance Index) calculation.
+Why Use It  : Multi-factory scope enables cross-department comparison queries.
+
+------------------------------------------------------------------------
+DATASET 5 — Semiconductor Manufacturing Process Data
+------------------------------------------------------------------------
+Name        : SECOM (Semiconductor Manufacturing)
+Platform    : UCI ML Repository
+URL         : https://archive.ics.uci.edu/ml/datasets/SECOM
+Format      : CSV (two files: SECOM.data + SECOM_labels.data)
+Size        : 1,567 records x 591 sensor features
+Description : Real semiconductor manufacturing dataset. Each row represents
+              a manufacturing pass; label indicates pass/fail. Features are
+              anonymized sensor readings from the production line.
+Columns     : 591 anonymized sensor signal columns, Label (-1 = fail, +1 = pass),
+              Timestamp
+Relevance   : Advanced dataset for demonstrating AI anomaly detection in
+              FactoryFlow. The high dimensionality shows why DBMS indexing
+              and efficient querying are essential at scale.
+Why Use It  : Cited in hundreds of research papers; adds academic credibility.
+
+================================================================================
+  SECTION 2: EMPLOYEE & HR DATASETS
+================================================================================
+
+------------------------------------------------------------------------
+DATASET 6 — IBM HR Analytics Employee Attrition Dataset
+------------------------------------------------------------------------
+Name        : IBM HR Analytics — Employee Attrition & Performance
+Platform    : Kaggle
+URL         : https://www.kaggle.com/datasets/pavansubhasht/ibm-hr-analytics-attrition-dataset
+Format      : CSV
+Size        : 1,470 records x 35 features
+Description : Synthetic dataset created by IBM data scientists. Contains
+              comprehensive employee attributes including demographics,
+              job level, department, performance rating, job satisfaction,
+              attrition flag, years at company, and compensation data.
+Columns     : Age, Attrition, BusinessTravel, DailyRate, Department,
+              DistanceFromHome, Education, EmployeeCount, EmployeeNumber,
+              EnvironmentSatisfaction, Gender, HourlyRate, JobInvolvement,
+              JobLevel, JobRole, JobSatisfaction, MaritalStatus, MonthlyIncome,
+              NumCompaniesWorked, Over18, OverTime, PercentSalaryHike,
+              PerformanceRating, RelationshipSatisfaction, StandardHours,
+              StockOptionLevel, TotalWorkingYears, TrainingTimesLastYear,
+              WorkLifeBalance, YearsAtCompany, YearsInCurrentRole,
+              YearsSinceLastPromotion, YearsWithCurrManager
+Relevance   : Maps to FactoryFlow's Employee model. Supports workforce
+              analytics, attrition risk prediction, and promotion history
+              analysis. JobLevel corresponds to FactoryFlow's role hierarchy.
+Why Use It  : Most widely used HR analytics dataset; clean, no nulls.
+
+------------------------------------------------------------------------
+DATASET 7 — Factory Employee Performance Tracking
+------------------------------------------------------------------------
+Name        : Employee Performance & Productivity Dataset
+Platform    : Kaggle
+URL         : https://www.kaggle.com/datasets/sanjanchaudhari/employees-performance-for-hr-analytics
+Format      : CSV
+Size        : ~4,000 records
+Description : Employee performance data from a manufacturing-like environment.
+              Includes department, education, gender, recruitment channel,
+              training count, previous year rating, length of service,
+              awards won, average training score, and whether promoted.
+Columns     : employee_id, department, region, education, gender,
+              recruitment_channel, no_of_trainings, age, previous_year_rating,
+              length_of_service, awards_won, avg_training_score, is_promoted
+Relevance   : Directly supports FactoryFlow's Employee Management module and
+              PromotionHistory model. The is_promoted field maps directly to
+              the promotion tracking feature.
+Why Use It  : Realistic promotion-eligible vs. non-eligible segmentation.
+
+------------------------------------------------------------------------
+DATASET 8 — HR Employee Lifecycle Dataset
+------------------------------------------------------------------------
+Name        : Human Resources Data Set
+Platform    : Kaggle
+URL         : https://www.kaggle.com/datasets/rhuebner/human-resources-data-set
+Format      : CSV
+Size        : 311 records
+Description : Comprehensive HR dataset from a fictional company. Includes
+              hiring source, employment status (active/terminated/resigned),
+              department, position, manager, pay rate, performance score,
+              absence count, and termination reason.
+Columns     : Employee_Name, EmpID, MarriedID, MaritalStatusID, GenderID,
+              EmpStatusID, DeptID, PerfScoreID, FromDiversityJobFairID,
+              Salary, Termd, PositionID, Position, State, Zip,
+              DOB, Sex, MaritalDesc, CitizenDesc, HispanicLatino,
+              RaceDesc, DateofHire, DateofTermination, TermReason,
+              EmploymentStatus, Department, ManagerName, ManagerID,
+              RecruitmentSource, PerformanceScore, EngagementSurvey,
+              EmpSatisfaction, SpecialProjectsCount, LastPerformanceReview_Date,
+              DaysLateLast30, Absences
+Relevance   : EmploymentStatus column (Active/Terminated/Voluntarily Terminated)
+              maps to FactoryFlow's EmploymentStatus enum. DateofHire and
+              DateofTermination support employee lifecycle queries.
+Why Use It  : Covers the full hire-to-terminate cycle. Perfect for FactoryFlow.
+
+================================================================================
+  SECTION 3: INDUSTRIAL DEFECT & QUALITY CONTROL DATASETS
+================================================================================
+
+------------------------------------------------------------------------
+DATASET 9 — Casting Product Defect Detection
+------------------------------------------------------------------------
+Name        : Casting Manufacturing Product Defect Detection
+Platform    : Kaggle
+URL         : https://www.kaggle.com/datasets/ravirajsinh45/real-life-industrial-dataset-of-casting-product
+Format      : Image (JPG) + CSV labels
+Size        : 7,348 images + metadata CSV
+Description : Real industrial dataset of top-view images of pump impeller
+              castings, labeled as "ok_front" or "def_front" (defective).
+              Metadata includes defect type, part ID, and inspection date.
+Columns     : image_path, label (ok/defective), part_id, inspection_date,
+              defect_category, inspector_id
+Relevance   : The metadata CSV can seed FactoryFlow's Production table defect
+              fields. Demonstrates quality control tracking. CSV portion
+              shows real defect rates (approximately 40% defective).
+Why Use It  : Real industrial images + structured defect metadata.
+
+------------------------------------------------------------------------
+DATASET 10 — Steel Plate Fault Detection
+------------------------------------------------------------------------
+Name        : Steel Plates Faults Dataset
+Platform    : UCI ML Repository
+URL         : https://archive.ics.uci.edu/ml/datasets/Steel+Plates+Faults
+Format      : CSV
+Size        : 1,941 records x 33 features
+Description : Steel plate manufacturing quality dataset. Each record describes
+              faults detected in steel plate production: Pastry, Z_Scratch,
+              K_Scratch, Stains, Dirtiness, Bumps, and Other_Faults.
+              Features include geometric and electromagnetic measurements.
+Columns     : X_Minimum, X_Maximum, Y_Minimum, Y_Maximum, Pixels_Areas,
+              X_Perimeter, Y_Perimeter, Sum_of_Luminosity, Minimum_of_Luminosity,
+              Maximum_of_Luminosity, Length_of_Conveyer, TypeOfSteel_A300,
+              TypeOfSteel_A400, Steel_Plate_Thickness, Edges_Index,
+              Empty_Index, Square_Index, Outside_X_Index, Edges_X_Index,
+              Edges_Y_Index, Outside_Global_Index, LogOfAreas, Log_X_Length,
+              Log_Y_Length, Orientation_Index, Luminosity_Index, SigmoidOfAreas,
+              (7 fault type indicator columns)
+Relevance   : Supports defect rate analysis in FactoryFlow. Fault type columns
+              can populate defect categories in Production records.
+Why Use It  : Multi-class defect classification; mirrors real steel production.
+
+------------------------------------------------------------------------
+DATASET 11 — Quality Control in Pharmaceutical Manufacturing
+------------------------------------------------------------------------
+Name        : Pharmaceutical Manufacturing Quality Data
+Platform    : Kaggle
+URL         : https://www.kaggle.com/datasets/felipefiorini/pharmaceutical-manufacturing
+Format      : CSV
+Size        : ~3,200 records
+Description : Batch production data from pharmaceutical manufacturing.
+              Includes batch ID, production line, yield percentage, defect
+              count, raw material quality score, processing time, and QC
+              pass/fail status.
+Columns     : batch_id, production_line, product_code, yield_pct, defect_count,
+              raw_material_score, processing_time_hrs, temperature_avg,
+              humidity_avg, qc_status (PASS/FAIL), production_date, shift
+Relevance   : The shift column (MORNING/AFTERNOON/NIGHT) aligns with
+              FactoryFlow's ProductionShift enum. QC pass/fail maps to
+              FactoryFlow's quality scoring module.
+Why Use It  : Pharmaceutical context broadens the scope of DBMS impact demo.
+
+================================================================================
+  SECTION 4: FACTORY IoT / SENSOR DATASETS
+================================================================================
+
+------------------------------------------------------------------------
+DATASET 12 — Industrial IoT Machine Sensor Data
+------------------------------------------------------------------------
+Name        : Predictive Maintenance — AI4I 2020 Dataset
+Platform    : UCI ML Repository / Kaggle
+URL         : https://archive.ics.uci.edu/ml/datasets/AI4I+2020+Predictive+Maintenance+Dataset
+             Mirror: https://www.kaggle.com/datasets/shivamb/machine-predictive-maintenance-classification
+Format      : CSV
+Size        : 10,000 records
+Description : Synthetic dataset reflecting real predictive maintenance data.
+              Contains machine type, temperature, rotational speed, torque,
+              tool wear, and five failure mode labels (TWF, HDF, PWF, OSF, RNF).
+Columns     : UID, productID, type, air_temperature_K, process_temperature_K,
+              rotational_speed_rpm, torque_Nm, tool_wear_min, machine_failure,
+              TWF (tool wear failure), HDF (heat dissipation failure),
+              PWF (power failure), OSF (overstrain failure), RNF (random failure)
+Relevance   : Future scope item in FactoryFlow: IoT sensor integration. This
+              dataset simulates what IoT-connected machines would feed into
+              the Production table. Also supports AI anomaly detection demos.
+Why Use It  : Referenced in the FactoryFlow future scope section explicitly.
+
+------------------------------------------------------------------------
+DATASET 13 — Factory Energy & Appliance Usage (IoT Smart Building)
+------------------------------------------------------------------------
+Name        : Appliances Energy Prediction Dataset
+Platform    : UCI ML Repository
+URL         : https://archive.ics.uci.edu/ml/datasets/Appliances+energy+prediction
+Format      : CSV
+Size        : 19,735 records (10-minute intervals over ~4.5 months)
+Description : IoT sensor data from a smart home/factory-like environment.
+              Temperature and humidity readings from 9 rooms, weather data,
+              and appliance energy usage. Useful for industrial energy cost
+              modeling and efficiency calculations.
+Columns     : date, Appliances (energy use in Wh), lights (Wh), T1-T9 (temperatures),
+              RH_1 to RH_9 (humidity), T_out, Press_mm_hg, RH_out, Windspeed,
+              Visibility, Tdewpoint, rv1, rv2
+Relevance   : Can feed FactoryFlow's cost analysis. Energy consumption per
+              production run can be derived from this data to populate the
+              cost field in Production records.
+Why Use It  : Time-series IoT data showing DBMS value in sensor data storage.
+
+================================================================================
+  SECTION 5: SUPPLY CHAIN & INVENTORY DATASETS
+================================================================================
+
+------------------------------------------------------------------------
+DATASET 14 — Supply Chain Management Dataset
+------------------------------------------------------------------------
+Name        : DataCo Supply Chain Dataset
+Platform    : Kaggle
+URL         : https://www.kaggle.com/datasets/shashwatwork/dataco-smart-supply-chain-for-big-data-analysis
+Format      : CSV
+Size        : 180,519 records x 53 columns
+Description : Comprehensive supply chain dataset from a global company.
+              Contains order details, shipping mode, product categories,
+              order quantities, profit ratios, customer segments, and
+              delivery status (Late/On Time/Advance/Cancelled).
+Columns     : Type, Days for shipping (real), Days for shipment (scheduled),
+              Benefit per order, Sales per customer, Delivery Status,
+              Late_delivery_risk, Category Id, Category Name, Customer City,
+              Customer Country, Customer Email, Customer Fname, Customer Id,
+              Customer Lname, Customer Password, Customer Segment,
+              Customer State, Customer Street, Customer Zipcode, Department Id,
+              Department Name, Latitude, Longitude, Market, Order City,
+              Order Country, Order Customer Id, Order Date (DateOrders),
+              Order Id, Order Item Cardprod Id, Order Item Discount,
+              Order Item Discount Rate, Order Item Id, Order Item Product Price,
+              Order Item Profit Ratio, Order Item Quantity, Sales, Order Item Total,
+              Order Profit Per Order, Order Region, Order State, Order Status,
+              Order Zipcode, Product Card Id, Product Category Id,
+              Product Description, Product Image, Product Name, Product Price,
+              Product Status, shipping date (DateOrders), Shipping Mode
+Relevance   : The Department and Product columns map to FactoryFlow's
+              Department and Product models. Financial columns (profit,
+              sales) can populate the financial fields in Production records.
+Why Use It  : Large dataset demonstrates DBMS performance at scale (180K rows).
+
+------------------------------------------------------------------------
+DATASET 15 — Manufacturing Supply Chain Optimization
+------------------------------------------------------------------------
+Name        : Supply Chain & Logistics Optimization Dataset
+Platform    : Kaggle
+URL         : https://www.kaggle.com/datasets/harshsingh2209/supply-chain-analysis
+Format      : CSV
+Size        : ~2,500 records
+Description : End-to-end supply chain data for makeup products. Includes
+              product type, SKU, price, availability, revenue generated,
+              customer demographics, stock levels, lead times, shipping costs,
+              supplier information, defect rates, and manufacturing costs.
+Columns     : Product type, SKU, Price, Availability, Number of products sold,
+              Revenue generated, Customer demographics, Stock levels,
+              Lead times, Order quantities, Shipping times, Shipping carriers,
+              Shipping costs, Supplier name, Location, Lead time (supplier),
+              Production volumes, Manufacturing lead time, Manufacturing costs,
+              Inspection results, Defect rates, Transportation modes, Routes,
+              Costs
+Relevance   : The Defect rates, Manufacturing costs, and Production volumes
+              columns have direct mappings to FactoryFlow's Production model.
+              The SKU column maps to FactoryFlow's Product model.
+Why Use It  : Covers product-to-revenue chain — supports financial analytics.
+
+------------------------------------------------------------------------
+DATASET 16 — Inventory Management in Manufacturing
+------------------------------------------------------------------------
+Name        : Inventory Management & Demand Forecasting
+Platform    : Kaggle
+URL         : https://www.kaggle.com/datasets/blurredmachine/supply-chain-logistic-problem
+Format      : CSV + XLSX
+Size        : ~10,000 records
+Description : Logistics and inventory dataset with product codes, order dates,
+              origin/destination, unit quantities, freight costs, shipping modes,
+              and vendor ratings. Useful for simulating product movement through
+              a factory-to-customer pipeline.
+Columns     : ID, Country, Fulfill Via, Vendor INCO Term, Shipment Mode,
+              Scheduled Delivery Date, Delivered to Client Date, Delivery Recorded Date,
+              Product Group, Sub Classification, Vendor, Item Description,
+              Molecule/Test Type, Brand, Dosage, Dosage Form, Unit of Measure (Per Pack),
+              Line Item Quantity, Line Item Value, Pack Price, Unit Price,
+              Manufacturing Site, First Line Designation, Weight (Kilograms),
+              Freight Cost (USD), Line Item Insurance (USD)
+Relevance   : Manufacturing site, freight cost, and product group data can
+              augment FactoryFlow's Product and Production tables. Supports
+              cost analysis queries.
+Why Use It  : Supply chain context shows DBMS relevance beyond just production.
+
+================================================================================
+  SECTION 6: GOVERNMENT / OPEN DATA PORTALS
+================================================================================
+
+------------------------------------------------------------------------
+DATASET 17 — Annual Survey of Industries (India)
+------------------------------------------------------------------------
+Name        : Annual Survey of Industries (ASI)
+Platform    : data.gov.in (Government of India Open Data Portal)
+URL         : https://data.gov.in/catalog/annual-survey-industries
+Format      : CSV / Excel
+Size        : Varies by year; ~100,000+ factory records per year
+Description : Official government data on Indian industries: number of workers,
+              wages, output value, raw material consumption, depreciation,
+              profit, and productivity. Covers manufacturing sectors including
+              textiles, chemicals, metals, and food processing.
+Columns     : State/UT, Industry code (NIC), Number of factories,
+              Number of workers, Wages and salaries paid, Output value,
+              Raw material cost, Fuel consumed, Other costs, Net value added,
+              Capital formation, Profit earned
+Relevance   : Most contextually relevant to the FactoryFlow project's stated
+              goal of demonstrating DBMS impact on industrial performance in India.
+              Use ASI data as real benchmark figures in the AI benchmarking module.
+Why Use It  : Primary source for Indian manufacturing benchmarks; validates IPI scores.
+
+------------------------------------------------------------------------
+DATASET 18 — World Bank Manufacturing Data
+------------------------------------------------------------------------
+Name        : World Bank — Manufacturing Value Added & Employment
+Platform    : data.worldbank.org
+URL         : https://data.worldbank.org/indicator/NV.IND.MANF.ZS
+Format      : CSV / JSON / Excel API
+Size        : 200+ countries x 60+ years
+Description : Manufacturing value added as % of GDP, manufacturing employment,
+              labor productivity, and industrial growth rates by country and year.
+              Useful for contextualizing Indian factory performance.
+Columns     : Country Name, Country Code, Indicator Name, Indicator Code,
+              Year (1960–2023), Value
+Relevance   : Supports the "industry benchmark" context in FactoryFlow's AI
+              performance benchmarking module. Provides global industrial
+              performance baselines for comparison.
+Why Use It  : Authoritative global source; supports SDG 8 and SDG 9 context.
+
+------------------------------------------------------------------------
+DATASET 19 — OSHA Workplace Safety & Injury Data (USA)
+------------------------------------------------------------------------
+Name        : OSHA Injury and Illness Data
+Platform    : data.gov (US Government)
+URL         : https://www.osha.gov/data/commonstats
+Format      : CSV
+Size        : ~400,000+ establishment records
+Description : US Occupational Safety and Health Administration data on workplace
+              injuries, illnesses, and fatalities in manufacturing establishments.
+              Includes industry type, number of employees, hours worked, DART
+              rate (Days Away, Restricted, or Transferred), and total case rates.
+Columns     : establishment_name, city, state, zip, industry_description,
+              naics_code, size, annual_average_employees, total_hours_worked,
+              total_deaths, total_dafw_cases, total_djtr_cases,
+              total_other_cases, total_dafw_days, total_djtr_days,
+              total_injuries, total_skin_disorders, total_respiratory_conditions,
+              total_poisonings, total_hearing_loss, total_other_illnesses
+Relevance   : Workplace safety metrics can be added to FactoryFlow as an
+              extension. Demonstrates DBMS value in compliance reporting.
+Why Use It  : Adds employee safety dimension to workforce analytics module.
+
+================================================================================
+  SECTION 7: SYNTHETIC DATASET GENERATORS
+================================================================================
+
+------------------------------------------------------------------------
+TOOL 1 — Faker.js / Faker.py
+------------------------------------------------------------------------
+Name        : Faker — Synthetic Data Generator
+Platform    : npm (Node.js) / PyPI (Python)
+URL         : https://fakerjs.dev/ (JavaScript)
+             https://faker.readthedocs.io/ (Python)
+Format      : Generates any format (JSON, CSV, SQL INSERT statements)
+Description : Library for generating realistic fake data. Can generate
+              names, addresses, company names, job titles, dates, phone
+              numbers, product names, financial figures, and more.
+Relevance   : Directly used in FactoryFlow's database seeding scripts
+              (seed.js / seed.ts) to populate Employee, Department, Role,
+              Product, and Production tables with realistic data at scale.
+How to Use  :
+  // Example: Generate 100 employee records
+  const { faker } = require('@faker-js/faker');
+  const employees = Array.from({ length: 100 }, () => ({
+    name: faker.person.fullName(),
+    employeeId: faker.string.alphanumeric(8).toUpperCase(),
+    hireDate: faker.date.between({ from: '2018-01-01', to: '2024-01-01' }),
+    department: faker.helpers.arrayElement(['Production', 'QA', 'Logistics']),
+    salary: faker.number.float({ min: 25000, max: 120000, precision: 0.01 })
+  }));
+Why Use It  : Enables database population without needing real employee data.
+
+------------------------------------------------------------------------
+TOOL 2 — Mockaroo
+------------------------------------------------------------------------
+Name        : Mockaroo — Realistic Data Generator (Web-based)
+Platform    : Web Application
+URL         : https://www.mockaroo.com/
+Format      : CSV, JSON, SQL, Excel
+Description : Browser-based tool that generates up to 1,000 rows of
+              realistic, customizable data free of charge. Supports 200+
+              data types including employment status, shift patterns,
+              percentages, and custom formula fields.
+Relevance   : Can generate production records with custom columns matching
+              FactoryFlow's Production schema: productionDate, shift,
+              unitsProduced (300–1500), defects (0–50), efficiency (75–99),
+              revenue, cost, profit.
+How to Use  :
+  Visit https://www.mockaroo.com, define your schema:
+    - productionDate  : Date (past 1 year)
+    - shift           : Custom List [MORNING, EVENING, NIGHT]
+    - unitsProduced   : Number (300–1500)
+    - defects         : Number (0–50)
+    - efficiency      : Formula (100 - (defects / unitsProduced * 100))
+    - revenue         : Money ($5,000–$50,000)
+    - cost            : Money ($2,000–$25,000)
+  Export as CSV and import into PostgreSQL.
+Why Use It  : No coding required; ideal for quickly seeding demo database.
+
+------------------------------------------------------------------------
+TOOL 3 — generatedata.com
+------------------------------------------------------------------------
+Name        : Generate Data — Open Source Data Generator
+Platform    : Web / Self-hosted
+URL         : https://generatedata.com/
+Format      : CSV, JSON, SQL INSERT, XML
+Description : Open-source data generation tool with a visual interface.
+              Supports SQL export directly in PostgreSQL INSERT format,
+              which can be pasted directly into psql for instant seeding.
+Relevance   : Generates SQL INSERT statements that match FactoryFlow's
+              table structure. Useful for creating demo data for Project
+              presentations and exams.
+Why Use It  : Direct SQL output eliminates import step; works offline too.
+
+================================================================================
+  SECTION 8: DATASET USAGE GUIDE FOR FACTORYFLOW
+================================================================================
+
+The following table summarizes which datasets best serve each FactoryFlow module:
+
+Module                    | Recommended Dataset(s)
+--------------------------+-----------------------------------------------------------
+Production Management     | Dataset 1 (AI4I), Dataset 2 (Steel Energy), Dataset 3
+Employee Management       | Dataset 6 (IBM HR), Dataset 7 (Performance), Dataset 8 (HR)
+AI Anomaly Detection      | Dataset 1 (AI4I), Dataset 5 (SECOM), Dataset 12 (IoT)
+Quality Control Scoring   | Dataset 9 (Casting), Dataset 10 (Steel Faults), Dataset 11
+Performance Benchmarking  | Dataset 17 (ASI India), Dataset 18 (World Bank)
+Supply Chain / Products   | Dataset 14 (DataCo), Dataset 15 (Supply Chain), Dataset 16
+PDF Report Generation     | Any dataset; use Dataset 2 or Dataset 6 for charts
+Database Seeding (Demo)   | Faker.js (Tool 1), Mockaroo (Tool 2)
+
+================================================================================
+  SECTION 9: DATA FORMAT COMPATIBILITY WITH FACTORYFLOW
+================================================================================
+
+FactoryFlow's PostgreSQL schema expects the following data types. When importing
+external datasets, map columns as follows:
+
+  Production Table Fields:
+    productionDate   → DATE (YYYY-MM-DD)        — from dataset date columns
+    shift            → ENUM (MORNING/EVENING/NIGHT) — remap AM/PM/Night labels
+    unitsProduced    → INTEGER                  — from volume/output columns
+    defects          → INTEGER                  — from defect_count columns
+    efficiency       → FLOAT (0.0 – 100.0)     — compute: (1 - defects/units)*100
+    revenue          → DECIMAL(12,2)            — from revenue/sales columns
+    cost             → DECIMAL(12,2)            — from cost/expense columns
+    profit           → DECIMAL(12,2)            — compute: revenue - cost
+
+  Employee Table Fields:
+    name             → VARCHAR(255)             — from name/employee_name columns
+    employeeId       → VARCHAR(50)              — from employee_id/EmpID columns
+    status           → ENUM (ACTIVE/ON_LEAVE/RESIGNED/TERMINATED)
+                                                — remap employment_status values
+    hireDate         → DATE                    — from hire_date/DateofHire columns
+
+  Recommended Import Tool: pgAdmin 4 Import/Export CSV wizard
+  Alternative: Prisma seed scripts using csv-parse npm package
+
+================================================================================
+  SECTION 10: LICENSE & ATTRIBUTION NOTES
+================================================================================
+
+All datasets listed in this document are available under open licenses:
+
+  - Kaggle datasets: Subject to individual dataset licenses (typically CC0,
+    CC BY 4.0, or DbCL). Check the license tab on each dataset page.
+  - UCI ML Repository: Freely available for research and educational use.
+    Cite as: Dua, D. and Graff, C. (2019). UCI Machine Learning Repository.
+    Irvine, CA: University of California, School of Information and Computer Science.
+  - data.gov.in (India): Government Open Data License v1.0 — free for use
+    with attribution.
+  - World Bank: Creative Commons Attribution 4.0 International (CC BY 4.0).
+  - OSHA Data: US Government public domain (17 U.S.C. 105).
+
+For a B.Tech project, all above datasets are freely usable for educational
+and research purposes. No commercial redistribution intended.
+
+================================================================================
+  END OF DATASET SOURCES DOCUMENT
+  FactoryFlow DBMS — Group G19 — PIET CSE — Academic Year 2024-25
+================================================================================

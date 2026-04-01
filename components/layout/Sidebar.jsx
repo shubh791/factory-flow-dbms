@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaTachometerAlt, FaUsers, FaIndustry, FaChartLine, FaLightbulb, FaBuilding, FaBalanceScale, FaUserTie, FaUserShield, FaHistory, FaDatabase, FaBrain, FaFilePdf, FaFlask } from 'react-icons/fa';
+import { FaTachometerAlt, FaUsers, FaIndustry, FaChartLine, FaLightbulb, FaBuilding, FaBalanceScale, FaUserTie, FaUserShield, FaHistory, FaDatabase, FaBrain, FaFilePdf, FaFlask, FaCloudUploadAlt } from 'react-icons/fa';
 
 const NAV_SECTIONS = [
   {
@@ -42,6 +42,7 @@ const NAV_SECTIONS = [
       { name: 'System Summary', path: '/system-summary', icon: FaBrain },
       { name: 'Export Report', path: '/export-report', icon: FaFilePdf },
       { name: 'Benchmark Lab', path: '/benchmark', icon: FaFlask },
+      { name: 'Dataset Import', path: '/dataset-upload', icon: FaCloudUploadAlt },
     ],
   },
 ];

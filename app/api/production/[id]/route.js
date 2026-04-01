@@ -73,12 +73,14 @@ export async function PATCH(request, { params }) {
         units: newUnits,
         defects: newDefects,
         ...(productId && { productId: newProductId }),
-        ...(employeeId && { employeeId: Number(employeeId) }),
+        ...(employeeId !== undefined && { employeeId: employeeId ? Number(employeeId) : null }),
         ...(shift && { shift }),
+        ...(body.productionDate && { productionDate: new Date(body.productionDate) }),
         revenue,
         cost,
         profit,
       },
+      include: { product: true, employee: true },
     });
 
     return NextResponse.json(updated);

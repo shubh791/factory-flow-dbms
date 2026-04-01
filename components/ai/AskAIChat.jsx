@@ -1,56 +1,64 @@
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaBrain, FaPaperPlane, FaTrash, FaCircle, FaPlay, FaTimes, FaCheckCircle } from 'react-icons/fa';
+import {
+  FaBrain, FaPaperPlane, FaTrash, FaCircle,
+  FaPlay, FaTimes, FaCheckCircle, FaChevronDown, FaChevronUp,
+  FaBolt, FaLightbulb,
+} from 'react-icons/fa';
 import API from '@/lib/api';
 import { emit, DataEvents } from '@/lib/events';
+import { invalidateCache } from '@/lib/hooks/useFactoryData';
 
-/* ── Suggestion chips ────────────────────────────────────────────────── */
-const SUGGESTIONS = [
-  { label: 'Units today',          q: 'How many units were produced today?' },
-  { label: 'Latest record',        q: 'What is the latest production record?' },
-  { label: 'Active employees',     q: 'How many active employees do we have?' },
-  { label: 'Top producer',         q: 'Who is the highest producing employee?' },
-  { label: 'Most defective product', q: 'Which product has the highest defect rate?' },
-  { label: 'Efficiency trend',     q: 'What is our overall efficiency and how can we improve it?' },
-  { label: 'Worst department',     q: 'Which department has the lowest efficiency?' },
-  { label: 'How to promote',       q: 'How do I promote an employee?' },
-  { label: 'Add production record', q: 'How do I add a new production record?' },
+const STORAGE_KEY = 'factoryflow_chat_history';
+
+/* ── Quick action / query chips ─────────────────────────────────────── */
+const QUERY_CHIPS = [
+  { label: '📊 Units today',        q: 'How many units were produced today?' },
+  { label: '🏆 Top producer',       q: 'Who is the highest producing employee?' },
+  { label: '⚠ Worst defects',       q: 'Which product has the highest defect rate?' },
+  { label: '📉 Low efficiency',     q: 'Which department has the lowest efficiency?' },
+  { label: '📈 Production trend',   q: 'Analyze our production trend and forecast next month.' },
+  { label: '🧠 System insights',    q: 'Give me a full system analysis with strengths and risks.' },
 ];
 
-/* ── Parse AI action blocks from message text ────────────────────────── */
+const ACTION_CHIPS = [
+  { label: '➕ Add employee',       q: 'Add a new employee named John Doe with code EMP099 to the default department.' },
+  { label: '📦 Log production',     q: 'Add a production record with 500 units and 5 defects for the first product, morning shift.' },
+  { label: '🔄 Set on leave',       q: 'Set employee status to on_leave — specify the employee code.' },
+  { label: '📧 Update email',       q: 'Update email for employee — specify code and new email.' },
+  { label: '🗑 Delete record',      q: 'Delete production record — specify the record ID.' },
+  { label: '⬆ Promote employee',   q: 'Promote an employee — specify name and new role.' },
+];
+
+/* ── Parse action block ──────────────────────────────────────────────── */
 function parseActionBlock(text) {
   const match = text.match(/```action\s*([\s\S]*?)\s*```/);
   if (!match) return null;
   try { return JSON.parse(match[1].trim()); } catch { return null; }
 }
-
 function stripActionBlock(text) {
   return text.replace(/```action[\s\S]*?```/g, '').trim();
 }
 
 /* ── Markdown-lite renderer ──────────────────────────────────────────── */
-function SafeMarkdown({ children, large }) {
+function SafeMarkdown({ children }) {
   if (!children) return null;
-  const lines = children.split('\n');
   return (
-    <div style={{ fontSize: large ? 13.5 : 12.5, color: '#9090a4', lineHeight: 1.85 }}>
-      {lines.map((line, i) => {
-        if (/^#{1,3}\s/.test(line)) {
-          return <p key={i} style={{ fontWeight: 700, color: '#f0f0f4', marginTop: 8, marginBottom: 2, fontSize: large ? 14 : 13 }}>{line.replace(/^#{1,3}\s/, '')}</p>;
-        }
-        if (/^(\s*[-•▸✓✗]|\d+\.)/.test(line)) {
+    <div style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.85 }}>
+      {children.split('\n').map((line, i) => {
+        if (/^#{1,3}\s/.test(line))
+          return <p key={i} style={{ fontWeight: 700, color: '#f0f0f4', marginTop: 8, marginBottom: 2, fontSize: 13 }}>{line.replace(/^#{1,3}\s/, '')}</p>;
+        if (/^(\s*[-•▸✓✗]|\d+\.)/.test(line))
           return <p key={i} style={{ paddingLeft: 12, marginBottom: 2 }}>{line}</p>;
-        }
         if (line.trim() === '') return <br key={i} />;
-        // Bold inline
         const parts = line.split(/(\*\*[^*]+\*\*)/g);
         return (
           <p key={i} style={{ marginBottom: 2 }}>
-            {parts.map((part, j) =>
-              /^\*\*[^*]+\*\*$/.test(part)
-                ? <strong key={j} style={{ color: '#f0f0f4', fontWeight: 600 }}>{part.slice(2,-2)}</strong>
-                : part
+            {parts.map((p, j) =>
+              /^\*\*[^*]+\*\*$/.test(p)
+                ? <strong key={j} style={{ color: '#f0f0f4', fontWeight: 600 }}>{p.slice(2,-2)}</strong>
+                : p
             )}
           </p>
         );
@@ -59,8 +67,8 @@ function SafeMarkdown({ children, large }) {
   );
 }
 
-/* ── Action card (AI-suggested CRUD) ────────────────────────────────── */
-function ActionCard({ action, onExecute, onDismiss }) {
+/* ── Action confirmation card ────────────────────────────────────────── */
+function ActionCard({ action, onDismiss }) {
   const [running, setRunning] = useState(false);
   const [result,  setResult]  = useState(null);
 
@@ -69,75 +77,97 @@ function ActionCard({ action, onExecute, onDismiss }) {
     try {
       const res = await API.post('/ai/action', { type: action.type, data: action.data });
       setResult({ ok: true, msg: res.data.message });
-      // Emit real-time events
-      if (action.type.includes('production')) emit(DataEvents.PRODUCTION_CHANGED);
-      if (action.type.includes('employee') || action.type.includes('promote')) emit(DataEvents.EMPLOYEES_CHANGED);
-      if (action.type.includes('role'))      emit(DataEvents.ROLES_CHANGED);
-      if (action.type.includes('promote'))   emit(DataEvents.PROMOTIONS_CHANGED);
-      onExecute?.(res.data);
+
+      const t = action.type;
+      // Invalidate cache + emit events for instant UI update
+      if (t.includes('production')) {
+        invalidateCache(['/production', '/analytics/executive-summary']);
+        emit(DataEvents.PRODUCTION_CHANGED);
+      }
+      if (t.includes('employee') || t.includes('promote') || t === 'update_employee_status') {
+        invalidateCache(['/employees', '/analytics/executive-summary']);
+        emit(DataEvents.EMPLOYEES_CHANGED);
+      }
+      if (t.includes('role'))    emit(DataEvents.ROLES_CHANGED);
+      if (t.includes('promote')) emit(DataEvents.PROMOTIONS_CHANGED);
+      emit(DataEvents.ANY);
     } catch (err) {
-      setResult({ ok: false, msg: err.response?.data?.error || 'Action failed. Please try again.' });
+      setResult({ ok: false, msg: err.response?.data?.error || 'Action failed — please try again.' });
     } finally {
       setRunning(false);
     }
   };
 
   return (
-    <div className="rounded-xl mt-3" style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.2)' }}>
-      <div className="px-4 py-3">
-        <div className="flex items-center gap-2 mb-2">
-          <div style={{ width: 3, height: 14, borderRadius: 2, background: '#6366f1', flexShrink: 0 }} />
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.07em' }}>AI Action</p>
-        </div>
-        <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.7, marginBottom: 10 }}>{action.confirm}</p>
-
-        {result ? (
-          <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: result.ok ? 'rgba(16,185,129,0.08)' : 'rgba(244,63,94,0.08)', border: `1px solid ${result.ok ? 'rgba(16,185,129,0.2)' : 'rgba(244,63,94,0.2)'}` }}>
-            <FaCheckCircle size={10} style={{ color: result.ok ? '#10b981' : '#f43f5e', flexShrink: 0 }} />
-            <p style={{ fontSize: 12, color: result.ok ? '#10b981' : '#f87191' }}>{result.msg}</p>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <button
-              onClick={execute}
-              disabled={running}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '7px 14px', borderRadius: 8, border: 'none', cursor: running ? 'not-allowed' : 'pointer',
-                background: 'rgba(99,102,241,0.18)', color: '#818cf8', fontSize: 12, fontWeight: 600,
-                opacity: running ? 0.6 : 1,
-              }}
-            >
-              {running
-                ? <span className="w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: '#818cf8', borderTopColor: 'transparent' }} />
-                : <FaPlay size={8} />}
-              {running ? 'Executing…' : action.label}
-            </button>
-            <button
-              onClick={onDismiss}
-              style={{ padding: '7px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'rgba(0,0,0,0.15)', color: '#54546a', fontSize: 12 }}
-            >
-              <FaTimes size={9} />
-            </button>
-          </div>
-        )}
+    <div style={{ background:'rgba(245,158,11,0.06)', border:'1px solid rgba(245,158,11,0.2)', borderRadius:12, marginTop:10, padding:'12px 14px' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:8 }}>
+        <div style={{ width:3, height:14, borderRadius:2, background:'#f59e0b', flexShrink:0 }} />
+        <span style={{ fontSize:10, fontWeight:700, color:'#f59e0b', textTransform:'uppercase', letterSpacing:'0.07em' }}>⚡ Confirm Action</span>
       </div>
+      <p style={{ fontSize:12.5, color:'#c4c4d4', lineHeight:1.7, marginBottom:12 }}>{action.confirm}</p>
+
+      {result ? (
+        <div style={{
+          display:'flex', alignItems:'center', gap:8, borderRadius:8, padding:'8px 12px',
+          background: result.ok ? 'rgba(16,185,129,0.08)' : 'rgba(244,63,94,0.08)',
+          border: `1px solid ${result.ok ? 'rgba(16,185,129,0.2)' : 'rgba(244,63,94,0.2)'}`,
+        }}>
+          <FaCheckCircle size={10} style={{ color: result.ok ? '#10b981' : '#f43f5e', flexShrink:0 }} />
+          <span style={{ fontSize:12, color: result.ok ? '#10b981' : '#f87191' }}>{result.msg}</span>
+        </div>
+      ) : (
+        <div style={{ display:'flex', gap:8 }}>
+          <button onClick={execute} disabled={running} style={{
+            flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+            padding:'8px 0', borderRadius:8, border:'none', cursor: running ? 'not-allowed' : 'pointer',
+            background: running ? 'rgba(16,185,129,0.1)' : 'rgba(16,185,129,0.18)',
+            color:'#34d399', fontSize:12.5, fontWeight:700, opacity: running ? 0.7 : 1,
+          }}>
+            {running
+              ? <span style={{ width:10, height:10, border:'2px solid #34d399', borderTopColor:'transparent', borderRadius:'50%', display:'inline-block', animation:'spin 0.6s linear infinite' }} />
+              : <FaPlay size={8} />}
+            {running ? 'Executing…' : 'Yes, Execute'}
+          </button>
+          <button onClick={onDismiss} disabled={running} style={{
+            flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+            padding:'8px 0', borderRadius:8, border:'1px solid rgba(244,63,94,0.25)',
+            background:'rgba(244,63,94,0.07)', color:'#fb7185',
+            fontSize:12.5, fontWeight:700, cursor: running ? 'not-allowed' : 'pointer',
+            opacity: running ? 0.4 : 1,
+          }}>
+            <FaTimes size={8} />
+            No, Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
 /* ── Main chat component ─────────────────────────────────────────────── */
-export default function AskAIChat({ defaultOpen = false, large = false }) {
+export default function AskAIChat({ defaultOpen = false, compact = false }) {
   const [open,      setOpen]      = useState(defaultOpen);
-  const [messages,  setMessages]  = useState([
-    { role: 'assistant', content: "Hello! I'm FactoryFlow AI. I can answer questions about your production data, guide you through operations, and even create records. Try a suggestion below or ask anything!" },
-  ]);
+  const [messages,  setMessages]  = useState(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [input,     setInput]     = useState('');
   const [loading,   setLoading]   = useState(false);
-  const [actions,   setActions]   = useState({}); // msgIndex -> action object
+  const [actions,   setActions]   = useState({});
+  const [tab,       setTab]       = useState('queries'); // 'queries' | 'actions'
   const bottomRef  = useRef(null);
   const inputRef   = useRef(null);
   const abortRef   = useRef(null);
+
+  // Persist messages to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const toSave = messages.filter(m => !m._streaming).slice(-40); // keep last 40
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave)); } catch {}
+  }, [messages]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
   useEffect(() => { if (open) setTimeout(() => inputRef.current?.focus(), 120); }, [open]);
@@ -146,7 +176,7 @@ export default function AskAIChat({ defaultOpen = false, large = false }) {
     const msg = (text ?? input).trim();
     if (!msg || loading) return;
 
-    const userMsg    = { role: 'user',      content: msg };
+    const userMsg     = { role: 'user',      content: msg };
     const placeholder = { role: 'assistant', content: '', _streaming: true };
 
     setMessages(prev => [...prev, userMsg, placeholder]);
@@ -163,7 +193,6 @@ export default function AskAIChat({ defaultOpen = false, large = false }) {
         body:    JSON.stringify({ message: msg, history }),
         signal:  abortRef.current.signal,
       });
-
       if (!res.ok) throw new Error('AI unavailable');
 
       const reader  = res.body.getReader();
@@ -176,19 +205,20 @@ export default function AskAIChat({ defaultOpen = false, large = false }) {
         accumulated += decoder.decode(value, { stream: true });
         setMessages(prev => {
           const next = [...prev];
-          if (next[next.length - 1]?._streaming) next[next.length - 1] = { ...next[next.length - 1], content: accumulated };
+          if (next[next.length - 1]?._streaming)
+            next[next.length - 1] = { ...next[next.length - 1], content: accumulated };
           return next;
         });
       }
 
-      // Finalize — extract action block if present
-      const action = parseActionBlock(accumulated);
+      const action       = parseActionBlock(accumulated);
       const cleanContent = action ? stripActionBlock(accumulated) : accumulated;
 
       setMessages(prev => {
         const next = [...prev];
         const lastIdx = next.length - 1;
-        if (next[lastIdx]?._streaming) next[lastIdx] = { role: 'assistant', content: cleanContent };
+        if (next[lastIdx]?._streaming)
+          next[lastIdx] = { role: 'assistant', content: cleanContent };
         return next;
       });
 
@@ -202,7 +232,8 @@ export default function AskAIChat({ defaultOpen = false, large = false }) {
       if (err.name !== 'AbortError') {
         setMessages(prev => {
           const next = [...prev];
-          if (next[next.length - 1]?._streaming) next[next.length - 1] = { role: 'assistant', content: 'Sorry, AI is temporarily unavailable. Please try again.' };
+          if (next[next.length - 1]?._streaming)
+            next[next.length - 1] = { role: 'assistant', content: 'AI is temporarily unavailable. Please try again.' };
           return next;
         });
       }
@@ -212,66 +243,98 @@ export default function AskAIChat({ defaultOpen = false, large = false }) {
   }, [input, loading, messages]);
 
   const handleKey = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
+
   const clearChat = () => {
     abortRef.current?.abort();
-    setMessages([{ role: 'assistant', content: 'Chat cleared. Ask me anything about your factory data!' }]);
+    setMessages([]);
     setActions({});
     setLoading(false);
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
   };
 
-  return (
-    <div className="rounded-xl overflow-hidden" style={{ background: '#17171c', border: large ? '1px solid rgba(168,85,247,0.25)' : '1px solid #1f1f28' }}>
+  const maxH = compact ? 300 : 400;
 
+  return (
+    <div style={{
+      background:'#17171c',
+      border: `1px solid ${compact ? '#1f1f28' : 'rgba(168,85,247,0.25)'}`,
+      borderRadius:14,
+      overflow:'hidden',
+      height: '100%',
+      display:'flex',
+      flexDirection:'column',
+    }}>
       {/* Header */}
       <button
         onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between px-5 py-4"
-        style={{ borderBottom: open ? '1px solid #1f1f28' : 'none', cursor: 'pointer', background: 'none', textAlign: 'left' }}
+        style={{
+          width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+          padding:'14px 18px', borderBottom: open ? '1px solid #1f1f28' : 'none',
+          background:'none', cursor:'pointer', textAlign:'left', flexShrink:0,
+        }}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(168,85,247,0.08)', color: '#a855f7' }}>
-            <FaBrain size={large ? 15 : 13} />
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <div style={{ width:34, height:34, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(168,85,247,0.1)', color:'#a855f7', flexShrink:0 }}>
+            <FaBrain size={14} />
           </div>
           <div>
-            <p style={{ fontSize: large ? 15 : 13, fontWeight: 600, color: '#f0f0f4' }}>Ask FactoryFlow AI</p>
-            <p style={{ fontSize: large ? 12 : 11, color: '#54546a', marginTop: 1 }}>
-              {large ? 'Executive AI — real-time data · CRUD actions · intelligent suggestions' : 'Streaming industrial intelligence · Context-aware'}
+            <p style={{ fontSize:13.5, fontWeight:600, color:'#f0f0f4', lineHeight:1.2 }}>FactoryFlow AI</p>
+            <p style={{ fontSize:11, color:'#54546a', marginTop:1 }}>
+              {loading ? (
+                <span style={{ color:'#a855f7', display:'inline-flex', alignItems:'center', gap:4 }}>
+                  <FaCircle size={5} style={{ animation:'pulse 1s ease-in-out infinite' }} /> Thinking…
+                </span>
+              ) : 'Full system control · Real-time · CRUD + Insights'}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {loading && (
-            <div className="flex items-center gap-1.5" style={{ fontSize: 10, color: '#a855f7' }}>
-              <FaCircle size={5} style={{ animation: 'pulse 1s ease-in-out infinite' }} />
-              <span>Thinking…</span>
-            </div>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          {messages.length > 0 && (
+            <span style={{ fontSize:10, color:'#3a3a5a', background:'rgba(255,255,255,0.04)', padding:'2px 8px', borderRadius:20, border:'1px solid #2a2a3a' }}>
+              {messages.filter(m => !m._streaming).length} msgs
+            </span>
           )}
-          <span style={{ fontSize: 12, color: '#54546a' }}>{open ? '▲' : '▼'}</span>
+          {open ? <FaChevronUp size={11} style={{ color:'#54546a' }} /> : <FaChevronDown size={11} style={{ color:'#54546a' }} />}
         </div>
       </button>
 
       <AnimatePresence initial={false}>
         {open && (
-          <motion.div key="chat-body"
-            initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }}
-            style={{ overflow: 'hidden' }}
+          <motion.div key="body"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ overflow:'hidden', display:'flex', flexDirection:'column', flex:1 }}
           >
-            {/* Suggestion chips */}
-            <div className="px-4 pt-3 pb-1" style={{ borderBottom: '1px solid #1f1f28' }}>
-              <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#3a3a5a', fontWeight: 600, marginBottom: 6 }}>Quick questions</p>
-              <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                {SUGGESTIONS.map((s) => (
-                  <button key={s.label} onClick={() => send(s.q)} disabled={loading}
-                    style={{
-                      flexShrink: 0, padding: '5px 10px', borderRadius: 20,
-                      background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)',
-                      color: '#818cf8', fontSize: 11, fontWeight: 500, cursor: loading ? 'not-allowed' : 'pointer',
-                      opacity: loading ? 0.5 : 1, whiteSpace: 'nowrap', transition: 'background 0.15s',
-                    }}
-                    onMouseEnter={e => { if (!loading) e.target.style.background = 'rgba(99,102,241,0.16)'; }}
-                    onMouseLeave={e => { e.target.style.background = 'rgba(99,102,241,0.08)'; }}
-                  >
+            {/* Tab bar */}
+            <div style={{ display:'flex', borderBottom:'1px solid #1f1f28', flexShrink:0 }}>
+              {[['queries', FaLightbulb, 'Queries'], ['actions', FaBolt, 'Actions']].map(([key, Icon, label]) => (
+                <button key={key} onClick={() => setTab(key)} style={{
+                  flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                  padding:'9px 0', fontSize:11, fontWeight:600,
+                  color: tab === key ? '#a855f7' : '#54546a',
+                  borderBottom: tab === key ? '2px solid #a855f7' : '2px solid transparent',
+                  background:'none', cursor:'pointer', transition:'color 0.15s',
+                }}>
+                  <Icon size={9} />
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Chips */}
+            <div style={{ padding:'10px 14px 8px', borderBottom:'1px solid #1f1f28', flexShrink:0 }}>
+              <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:4, scrollbarWidth:'none' }}>
+                {(tab === 'queries' ? QUERY_CHIPS : ACTION_CHIPS).map(s => (
+                  <button key={s.label} onClick={() => send(s.q)} disabled={loading} style={{
+                    flexShrink:0, padding:'5px 10px', borderRadius:20, whiteSpace:'nowrap',
+                    background: tab === 'actions' ? 'rgba(245,158,11,0.08)' : 'rgba(99,102,241,0.08)',
+                    border: tab === 'actions' ? '1px solid rgba(245,158,11,0.2)' : '1px solid rgba(99,102,241,0.18)',
+                    color: tab === 'actions' ? '#fbbf24' : '#818cf8',
+                    fontSize:11, fontWeight:500, cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.5 : 1,
+                  }}>
                     {s.label}
                   </button>
                 ))}
@@ -279,31 +342,36 @@ export default function AskAIChat({ defaultOpen = false, large = false }) {
             </div>
 
             {/* Messages */}
-            <div className="overflow-y-auto px-4 py-3 space-y-3"
-              style={{ maxHeight: large ? 480 : 320, minHeight: large ? 180 : 100 }}>
+            <div style={{ overflowY:'auto', padding:'12px 14px', display:'flex', flexDirection:'column', gap:10, maxHeight: maxH, minHeight:80 }}>
+              {messages.length === 0 && !loading && (
+                <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 0', gap:8, opacity:0.35 }}>
+                  <FaBrain size={24} style={{ color:'#6366f1' }} />
+                  <p style={{ fontSize:12, color:'#54546a', textAlign:'center' }}>
+                    Ask anything about your factory<br />or click a chip above to start
+                  </p>
+                </div>
+              )}
+
               {messages.map((msg, i) => (
                 <div key={i}>
-                  <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className="max-w-[88%] rounded-xl px-3 py-2.5"
-                      style={{
-                        background:   msg.role === 'user' ? 'rgba(99,102,241,0.15)' : 'rgba(0,0,0,0.2)',
-                        border:       msg.role === 'user' ? '1px solid rgba(99,102,241,0.25)' : '1px solid #1f1f28',
-                        borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                      }}
-                    >
-                      <SafeMarkdown large={large}>{msg.content}</SafeMarkdown>
+                  <div style={{ display:'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                    <div style={{
+                      maxWidth:'88%', borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                      padding:'9px 12px',
+                      background: msg.role === 'user' ? 'rgba(99,102,241,0.15)' : 'rgba(0,0,0,0.25)',
+                      border: msg.role === 'user' ? '1px solid rgba(99,102,241,0.25)' : '1px solid #1f1f28',
+                    }}>
+                      <SafeMarkdown>{msg.content}</SafeMarkdown>
                       {msg._streaming && (
                         <span style={{ display:'inline-block', width:6, height:14, background:'#818cf8', borderRadius:2, marginLeft:2, verticalAlign:'middle', animation:'caretBlink 0.7s step-start infinite' }} />
                       )}
                     </div>
                   </div>
 
-                  {/* Action card below assistant message */}
                   {msg.role === 'assistant' && !msg._streaming && actions[i] && (
-                    <div className="ml-0 mr-auto max-w-[88%]">
+                    <div style={{ maxWidth:'88%' }}>
                       <ActionCard
                         action={actions[i]}
-                        onExecute={() => {}}
                         onDismiss={() => setActions(a => { const n={...a}; delete n[i]; return n; })}
                       />
                     </div>
@@ -312,12 +380,11 @@ export default function AskAIChat({ defaultOpen = false, large = false }) {
               ))}
 
               {loading && messages[messages.length - 1]?.role === 'user' && (
-                <div className="flex justify-start">
-                  <div className="rounded-xl px-3 py-2.5" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid #1f1f28' }}>
-                    <div className="flex items-center gap-1.5">
+                <div style={{ display:'flex', justifyContent:'flex-start' }}>
+                  <div style={{ borderRadius:'12px 12px 12px 2px', padding:'9px 14px', background:'rgba(0,0,0,0.25)', border:'1px solid #1f1f28' }}>
+                    <div style={{ display:'flex', gap:4, alignItems:'center' }}>
                       {[0,1,2].map(j => (
-                        <div key={j} className="w-1.5 h-1.5 rounded-full bg-[#818cf8]"
-                          style={{ animation: `bounceDot 1s ease-in-out ${j*0.15}s infinite` }} />
+                        <div key={j} style={{ width:6, height:6, borderRadius:'50%', background:'#818cf8', animation:`bounceDot 1s ease-in-out ${j*0.15}s infinite` }} />
                       ))}
                     </div>
                   </div>
@@ -326,27 +393,35 @@ export default function AskAIChat({ defaultOpen = false, large = false }) {
               <div ref={bottomRef} />
             </div>
 
-            {/* Input bar */}
-            <div className="px-4 pb-4 pt-2 flex items-end gap-2" style={{ borderTop: '1px solid #1f1f28' }}>
+            {/* Input */}
+            <div style={{ padding:'10px 14px 12px', borderTop:'1px solid #1f1f28', display:'flex', gap:8, alignItems:'flex-end', flexShrink:0 }}>
               <textarea ref={inputRef} rows={1} value={input}
                 onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
-                placeholder="Ask about production, defects, workforce, or request an action…"
+                placeholder="Type a command or question…"
                 style={{
-                  flex: 1, resize: 'none', background: '#0c0c0f', border: '1px solid #2c2c38',
-                  borderRadius: 10, padding: large ? '11px 14px' : '9px 12px',
-                  fontSize: large ? 13.5 : 12.5, color: '#f0f0f4', outline: 'none',
-                  lineHeight: 1.5, maxHeight: large ? 120 : 80, overflowY: 'auto', transition: 'border-color 150ms',
+                  flex:1, resize:'none', background:'#0c0c0f',
+                  border:'1px solid #2c2c38', borderRadius:10,
+                  padding:'9px 12px', fontSize:12.5, color:'#f0f0f4',
+                  outline:'none', lineHeight:1.5, maxHeight:80, overflowY:'auto',
+                  transition:'border-color 150ms',
                 }}
                 onFocus={e => { e.target.style.borderColor = '#6366f1'; }}
                 onBlur={e  => { e.target.style.borderColor = '#2c2c38'; }}
               />
-              <button onClick={() => send()} disabled={!input.trim() || loading}
-                className="ff-btn ff-btn-primary"
-                style={{ padding: '9px 14px', flexShrink: 0, opacity: (!input.trim() || loading) ? 0.4 : 1 }}>
+              <button onClick={() => send()} disabled={!input.trim() || loading} style={{
+                padding:'9px 13px', borderRadius:9, border:'none', flexShrink:0,
+                background: (!input.trim() || loading) ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.85)',
+                color: (!input.trim() || loading) ? '#6366f1' : '#fff',
+                cursor: (!input.trim() || loading) ? 'not-allowed' : 'pointer',
+                transition:'all 0.15s',
+              }}>
                 <FaPaperPlane size={11} />
               </button>
-              <button onClick={clearChat} className="ff-btn ff-btn-secondary"
-                style={{ padding: '9px 11px', flexShrink: 0 }} title="Clear chat">
+              <button onClick={clearChat} style={{
+                padding:'9px 10px', borderRadius:9, border:'1px solid #2c2c38',
+                background:'transparent', color:'#54546a', cursor:'pointer',
+                flexShrink:0, transition:'color 0.15s',
+              }} title="Clear chat history">
                 <FaTrash size={10} />
               </button>
             </div>
@@ -357,6 +432,8 @@ export default function AskAIChat({ defaultOpen = false, large = false }) {
       <style>{`
         @keyframes caretBlink { 0%,100%{opacity:1} 50%{opacity:0} }
         @keyframes bounceDot  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+        @keyframes spin       { to{transform:rotate(360deg)} }
+        @keyframes pulse      { 0%,100%{opacity:1} 50%{opacity:0.4} }
       `}</style>
     </div>
   );

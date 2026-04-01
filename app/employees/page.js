@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { FaUserPlus, FaEdit, FaTimes, FaSave } from 'react-icons/fa';
+import { FaUserPlus, FaEdit, FaTimes, FaSave, FaTrash, FaExclamationTriangle } from 'react-icons/fa';
 import API from '@/lib/api';
 import { useFactoryData, invalidateCache } from '@/lib/hooks/useFactoryData';
 import { emit, DataEvents } from '@/lib/events';
 
 export default function EmployeesPage() {
-  const { data: empData,  loading, refresh: refreshEmp } = useFactoryData('/employees');
-  const { data: deptData }                               = useFactoryData('/departments');
-  const { data: roleData }                               = useFactoryData('/roles');
+  const { data: empData,  loading, refresh: refreshEmp } = useFactoryData('/employees', {
+    listenTo: [DataEvents.EMPLOYEES_CHANGED],
+  });
+  const { data: deptData } = useFactoryData('/departments');
+  const { data: roleData } = useFactoryData('/roles');
 
   const employees   = useMemo(() => empData  || [], [empData]);
   const departments = useMemo(() => deptData || [], [deptData]);
@@ -17,6 +19,7 @@ export default function EmployeesPage() {
 
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null); // { id, name }
   const [formData, setFormData] = useState({
     id: null,
     name: '',
@@ -26,6 +29,7 @@ export default function EmployeesPage() {
     experience: 0,
     departmentId: '',
     roleId: '',
+    status: 'ACTIVE',
   });
 
   const fetchData = () => {
@@ -45,6 +49,7 @@ export default function EmployeesPage() {
           experience: Number(formData.experience),
           departmentId: Number(formData.departmentId),
           roleId: Number(formData.roleId),
+          status: formData.status,
         });
       } else {
         await API.post('/employees', {
@@ -90,6 +95,7 @@ export default function EmployeesPage() {
       experience: emp.experience,
       departmentId: emp.departmentId,
       roleId: emp.roleId,
+      status: emp.status || 'ACTIVE',
     });
     setShowModal(true);
   };
@@ -105,7 +111,20 @@ export default function EmployeesPage() {
       experience: 0,
       departmentId: '',
       roleId: '',
+      status: 'ACTIVE',
     });
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      await API.delete(`/employees/${confirmDelete.id}`);
+      fetchData();
+    } catch (error) {
+      alert(error.response?.data?.error || 'Delete failed');
+    } finally {
+      setConfirmDelete(null);
+    }
   };
 
   const stats = {
@@ -193,13 +212,22 @@ export default function EmployeesPage() {
                     </span>
                   </td>
                   <td>
-                    <button
-                      onClick={() => openEditModal(emp)}
-                      className="text-xs text-[var(--color-info)] hover:underline flex items-center gap-1"
-                    >
-                      <FaEdit size={10} />
-                      Edit
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => openEditModal(emp)}
+                        className="text-xs text-[var(--color-info)] hover:underline flex items-center gap-1"
+                      >
+                        <FaEdit size={10} />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => setConfirmDelete({ id: emp.id, name: emp.name })}
+                        className="text-xs text-[var(--color-danger)] hover:underline flex items-center gap-1"
+                      >
+                        <FaTrash size={10} />
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -207,6 +235,42 @@ export default function EmployeesPage() {
           </table>
         </div>
       </div>
+
+      {/* ── Delete confirmation ── */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="industrial-card-elevated w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-[var(--color-danger)]/10 flex items-center justify-center">
+                <FaExclamationTriangle size={18} className="text-[var(--color-danger)]" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">Are you sure?</h3>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">This action cannot be undone.</p>
+              </div>
+            </div>
+            <p className="text-sm text-[var(--text-secondary)] mb-6">
+              Delete employee <strong className="text-[var(--text-primary)]">{confirmDelete.name}</strong>? All their production records and data will be permanently removed.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="btn-industrial btn-secondary flex-1"
+              >
+                No
+              </button>
+              <button
+                onClick={handleDelete}
+                className="btn-industrial flex-1 flex items-center justify-center gap-2"
+                style={{ background: 'var(--color-danger)', color: '#fff', border: 'none' }}
+              >
+                <FaTrash size={11} />
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
@@ -280,6 +344,22 @@ export default function EmployeesPage() {
                   className="input-industrial"
                 />
               </div>
+
+              {editMode && (
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Employment Status</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="select-industrial"
+                  >
+                    <option value="ACTIVE">Active</option>
+                    <option value="ON_LEAVE">On Leave</option>
+                    <option value="RESIGNED">Resigned</option>
+                    <option value="TERMINATED">Terminated</option>
+                  </select>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

@@ -29,7 +29,9 @@ export async function PATCH(request, { params }) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, experience, departmentId, roleId, email, phone } = body;
+    const { name, experience, departmentId, roleId, email, phone, status } = body;
+
+    const VALID_STATUSES = ['ACTIVE', 'ON_LEAVE', 'RESIGNED', 'TERMINATED'];
 
     const updated = await prisma.employee.update({
       where: { id: Number(id) },
@@ -40,6 +42,7 @@ export async function PATCH(request, { params }) {
         ...(roleId && { roleId: Number(roleId) }),
         ...(email !== undefined && { email: email ? email.trim() : null }),
         ...(phone !== undefined && { phone: phone ? phone.trim() : null }),
+        ...(status && VALID_STATUSES.includes(status) && { status }),
       },
     });
 

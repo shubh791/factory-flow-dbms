@@ -3,18 +3,34 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { FaIndustry, FaUsers, FaTachometerAlt, FaExclamationTriangle, FaBrain, FaArrowRight } from 'react-icons/fa';
+import {
+  FaIndustry, FaUsers, FaTachometerAlt, FaExclamationTriangle,
+  FaArrowRight, FaArrowUp, FaArrowDown, FaMinus,
+  FaChartLine, FaCalendarDay, FaMoneyBillWave,
+} from 'react-icons/fa';
 import dynamic from 'next/dynamic';
 import { useFactoryData } from '@/lib/hooks/useFactoryData';
 import { DataEvents } from '@/lib/events';
-import AICommandCenter from '@/components/ai/AICommandCenter';
-import KPIStats from '@/components/charts/KPIStats';
+import AskAIChat from '@/components/ai/AskAIChat';
 
 const ProductionChart = dynamic(() => import('@/components/charts/ProductionChart'), { ssr: false });
 const EfficiencyChart = dynamic(() => import('@/components/charts/EfficiencyChart'), { ssr: false });
 
+function ChangeTag({ value, positive }) {
+  const isPositive = positive !== undefined ? positive : (value || '').startsWith('+');
+  const isZero = value === '+0.0%' || value === '0' || value === '+0';
+  const Icon = isZero ? FaMinus : isPositive ? FaArrowUp : FaArrowDown;
+  const color = isZero ? '#64748b' : isPositive ? '#10b981' : '#f43f5e';
+  return (
+    <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600, color }}>
+      <Icon size={8} />
+      {value}
+      <span style={{ color:'#475569', fontWeight:400, fontSize:10 }}>vs last month</span>
+    </span>
+  );
+}
+
 export default function Dashboard() {
-  // Real-time: auto-refresh when production or employee data changes anywhere in the app
   const { data: summary, loading: loadingSummary } = useFactoryData('/analytics/executive-summary', {
     listenTo: [DataEvents.PRODUCTION_CHANGED, DataEvents.EMPLOYEES_CHANGED],
   });
@@ -24,56 +40,68 @@ export default function Dashboard() {
 
   const production = useMemo(() => prodData || [], [prodData]);
   const loading    = loadingSummary || loadingProd;
-  const showAI     = false;
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="p-6 space-y-6">
         <div className="grid-industrial-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="skeleton h-32" />
-          ))}
+          {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-32" />)}
         </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="skeleton h-64" />
+          <div className="skeleton h-64" />
+        </div>
+        <div className="skeleton h-80" />
       </div>
     );
   }
 
+  const defectPositive = (summary?.defectChange || '+0.0%').startsWith('-'); // lower is better
+
   const kpis = [
     {
-      label: 'Production Output',
-      value: summary?.totalProduction?.toLocaleString() || '0',
-      unit: 'units',
-      change: summary?.productionChange || '+12.5%',
-      positive: true,
-      icon: FaIndustry,
-      color: 'var(--color-info)',
+      label:    'Production Output',
+      value:    (summary?.totalUnits ?? 0).toLocaleString(),
+      unit:     'units total',
+      sub:      `Today: ${(summary?.todayUnits ?? 0).toLocaleString()} units`,
+      change:   summary?.productionChange || '+0.0%',
+      positive: !(summary?.productionChange || '').startsWith('-'),
+      icon:     FaIndustry,
+      color:    'var(--color-info)',
+      accent:   'rgba(99,102,241,0.12)',
     },
     {
-      label: 'Active Workforce',
-      value: summary?.activeEmployees || '0',
-      unit: 'employees',
-      change: '+3',
+      label:    'Active Workforce',
+      value:    (summary?.activeEmployees ?? 0).toString(),
+      unit:     `of ${summary?.totalEmployees ?? 0} total`,
+      sub:      `Productivity: ${(summary?.workforceProductivity ?? 0).toLocaleString()} u/emp`,
+      change:   null,
       positive: true,
-      icon: FaUsers,
-      color: 'var(--color-success)',
+      icon:     FaUsers,
+      color:    'var(--color-success)',
+      accent:   'rgba(16,185,129,0.12)',
     },
     {
-      label: 'System Efficiency',
-      value: summary?.avgEfficiency ? `${summary.avgEfficiency.toFixed(1)}%` : '0%',
-      unit: '',
-      change: '+2.1%',
-      positive: true,
-      icon: FaTachometerAlt,
-      color: 'var(--chart-2)',
+      label:    'System Efficiency',
+      value:    `${(summary?.avgEfficiency ?? 0).toFixed(1)}%`,
+      unit:     '',
+      sub:      `Trend: ${summary?.trend || 'stable'}`,
+      change:   summary?.efficiencyChange || '+0.0%',
+      positive: !(summary?.efficiencyChange || '').startsWith('-'),
+      icon:     FaTachometerAlt,
+      color:    'var(--chart-2)',
+      accent:   'rgba(139,92,246,0.12)',
     },
     {
-      label: 'Defect Rate',
-      value: summary?.avgDefectRate ? `${summary.avgDefectRate.toFixed(2)}%` : '0%',
-      unit: '',
-      change: '-0.5%',
-      positive: true,
-      icon: FaExclamationTriangle,
-      color: (summary?.avgDefectRate || 0) > 5 ? 'var(--color-danger)' : 'var(--color-warning)',
+      label:    'Defect Rate',
+      value:    `${(summary?.avgDefectRate ?? 0).toFixed(2)}%`,
+      unit:     '',
+      sub:      `${(summary?.totalDefects ?? 0).toLocaleString()} total defects`,
+      change:   summary?.defectChange || '+0.0%',
+      positive: defectPositive,
+      icon:     FaExclamationTriangle,
+      color:    (summary?.avgDefectRate || 0) > 5 ? 'var(--color-danger)' : 'var(--color-warning)',
+      accent:   (summary?.avgDefectRate || 0) > 5 ? 'rgba(244,63,94,0.12)' : 'rgba(245,158,11,0.12)',
     },
   ];
 
@@ -83,117 +111,130 @@ export default function Dashboard() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-1">Executive Dashboard</h1>
-          <p className="text-sm text-[var(--text-secondary)]">Real-time industrial performance metrics and analytics</p>
+          <p className="text-sm text-[var(--text-secondary)]">
+            Real-time industrial metrics &nbsp;·&nbsp;
+            <span className={`font-medium ${summary?.trend === 'increasing' ? 'text-[var(--color-success)]' : summary?.trend === 'declining' ? 'text-[var(--color-danger)]' : 'text-[var(--text-tertiary)]'}`}>
+              {summary?.trend === 'increasing' ? '↑ Production trending up' : summary?.trend === 'declining' ? '↓ Production declining' : '→ Production stable'}
+            </span>
+          </p>
         </div>
-        <button
-          onClick={() => setShowAI(true)}
-          className="btn-industrial btn-primary flex items-center gap-2"
-        >
-          <FaBrain size={14} />
-          <span>AI Intelligence</span>
-        </button>
+        <div className="flex items-center gap-3">
+          {summary?.todayRecords > 0 && (
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
+              <FaCalendarDay size={10} />
+              {summary.todayRecords} records today
+            </div>
+          )}
+          {(summary?.profit ?? 0) > 0 && (
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
+              <FaMoneyBillWave size={10} />
+              ₹{((summary.profit) / 1000).toFixed(0)}k profit
+            </div>
+          )}
+        </div>
       </div>
 
       {/* KPI Grid */}
       <div className="grid-industrial-4">
         {kpis.map((kpi, idx) => (
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0, y: 20 }}
+          <motion.div key={idx}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
+            transition={{ delay: idx * 0.08 }}
             className="kpi-card"
+            style={{ borderTop: `3px solid ${kpi.color}` }}
           >
             <div className="flex items-start justify-between mb-3">
               <span className="kpi-label">{kpi.label}</span>
-              <div
-                className="w-9 h-9 rounded flex items-center justify-center"
-                style={{ background: `${kpi.color}20` }}
-              >
-                <kpi.icon size={18} style={{ color: kpi.color }} />
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: kpi.accent }}>
+                <kpi.icon size={16} style={{ color: kpi.color }} />
               </div>
             </div>
-            <div className="kpi-value">
+            <div className="kpi-value" style={{ fontSize: '1.65rem', lineHeight: 1 }}>
               {kpi.value}
-              {kpi.unit && <span className="text-lg text-[var(--text-tertiary)] ml-1">{kpi.unit}</span>}
+              {kpi.unit && <span className="text-sm text-[var(--text-tertiary)] ml-1.5 font-normal">{kpi.unit}</span>}
             </div>
-            {kpi.change && (
-              <div className={`kpi-change ${kpi.positive ? 'positive' : 'negative'}`}>
-                <span>{kpi.change}</span>
-                <span className="text-xs text-[var(--text-tertiary)]">vs last period</span>
-              </div>
-            )}
+            <div className="mt-1 mb-2 text-xs text-[var(--text-muted)]">{kpi.sub}</div>
+            {kpi.change && <ChangeTag value={kpi.change} positive={kpi.positive} />}
           </motion.div>
         ))}
       </div>
 
-      {/* Charts Grid */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <ProductionChart records={production} />
         <EfficiencyChart records={production} />
       </div>
 
-      {/* Recent Production Table */}
-      <div className="industrial-card-elevated p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Recent Production Records</h3>
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Latest entries from production database</p>
-          </div>
-          <Link href="/production" className="btn-industrial btn-secondary text-xs flex items-center gap-2">
-            <span>View All</span>
-            <FaArrowRight size={10} />
-          </Link>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="table-industrial">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Units</th>
-                <th>Defects</th>
-                <th>Efficiency</th>
-                <th>Shift</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {production.slice(0, 10).map((record, idx) => {
-                const efficiency = record.units > 0 ? ((record.units - record.defects) / record.units * 100) : 0;
-                return (
-                  <tr key={idx}>
-                    <td className="font-medium">{record.product?.name || 'N/A'}</td>
-                    <td>{record.units}</td>
-                    <td>
-                      <span className={record.defects > record.units * 0.05 ? 'text-[var(--color-danger)]' : 'text-[var(--text-primary)]'}>
-                        {record.defects}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={efficiency >= 95 ? 'text-[var(--color-success)]' : efficiency >= 85 ? 'text-[var(--color-warning)]' : 'text-[var(--color-danger)]'}>
-                        {efficiency.toFixed(1)}%
-                      </span>
-                    </td>
-                    <td>
-                      <span className="badge badge-neutral text-[10px]">{record.shift}</span>
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-1.5">
-                        <div className={`status-dot ${efficiency >= 95 ? 'status-active' : efficiency >= 85 ? 'status-warning' : 'status-error'}`} />
-                        <span className="text-xs">
-                          {efficiency >= 95 ? 'Excellent' : efficiency >= 85 ? 'Normal' : 'Review'}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Bottom grid: recent records + AI chat */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
-      {showAI && <AICommandCenter onClose={() => setShowAI(false)} />}
+        {/* Recent Production Table — 2/3 width */}
+        <div className="xl:col-span-2 industrial-card-elevated p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)]">Recent Production Records</h3>
+              <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Latest entries from production database</p>
+            </div>
+            <Link href="/production" className="btn-industrial btn-secondary text-xs flex items-center gap-2">
+              <span>View All</span>
+              <FaArrowRight size={10} />
+            </Link>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="table-industrial">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Units</th>
+                  <th>Defects</th>
+                  <th>Efficiency</th>
+                  <th>Shift</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {production.length === 0 ? (
+                  <tr><td colSpan={6} className="text-center text-[var(--text-muted)] py-8 text-sm">No production records yet</td></tr>
+                ) : production.slice(0, 10).map((record, idx) => {
+                  const eff = record.units > 0 ? ((record.units - record.defects) / record.units * 100) : 0;
+                  return (
+                    <tr key={idx}>
+                      <td className="font-medium">{record.product?.name || 'N/A'}</td>
+                      <td>{record.units.toLocaleString()}</td>
+                      <td>
+                        <span className={(record.defects / record.units * 100) > 5 ? 'text-[var(--color-danger)]' : ''}>
+                          {record.defects}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={eff >= 95 ? 'text-[var(--color-success)]' : eff >= 85 ? 'text-[var(--color-warning)]' : 'text-[var(--color-danger)]'}>
+                          {eff.toFixed(1)}%
+                        </span>
+                      </td>
+                      <td><span className="badge badge-neutral text-[10px]">{record.shift}</span></td>
+                      <td>
+                        <div className="flex items-center gap-1.5">
+                          <div className={`status-dot ${eff >= 95 ? 'status-active' : eff >= 85 ? 'status-warning' : 'status-error'}`} />
+                          <span className="text-xs">{eff >= 95 ? 'Excellent' : eff >= 85 ? 'Normal' : 'Review'}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* AI Chat — 1/3 width */}
+        <div className="xl:col-span-1">
+          <AskAIChat defaultOpen={true} compact={true} />
+        </div>
+
+      </div>
     </div>
   );
 }

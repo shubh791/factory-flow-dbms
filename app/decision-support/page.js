@@ -3,14 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import API from '@/lib/api';
 import { motion } from 'framer-motion';
-import dynamic from 'next/dynamic';
 import {
   FaBalanceScale, FaChartLine, FaExclamationTriangle,
-  FaCheckCircle, FaLightbulb, FaArrowUp, FaArrowDown, FaMinus,
+  FaCheckCircle, FaArrowUp, FaArrowDown, FaMinus,
 } from 'react-icons/fa';
 import AIInsightPanel from '@/components/ai/AIInsightPanel';
-
-const AskAIChat = dynamic(() => import('@/components/ai/AskAIChat'), { ssr: false });
 
 const stagger = { animate: { transition: { staggerChildren: 0.04 } } };
 const fadeUp  = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 } };
@@ -61,6 +58,41 @@ function safeStr(val) {
   // Collapse multiple newlines/spaces
   s = s.replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();
   return s.length > 5 ? s : null;
+}
+
+/* ── AI insight text → structured UI cards ──────────────────────────── */
+function AITextBlock({ text, color }) {
+  if (!text) return null;
+  // Split by newlines first, fallback to sentences
+  const rawLines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const points = rawLines.length > 1
+    ? rawLines
+    : (text.match(/[^.!?]+[.!?]+/g) || [text]).map(s => s.trim()).filter(Boolean);
+
+  if (points.length === 1) {
+    return (
+      <div className="flex items-start gap-2.5 rounded-xl px-4 py-3"
+        style={{ background: `${color}08`, border: `1px solid ${color}18` }}>
+        <div style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0, marginTop: 6 }} />
+        <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.8 }}>{points[0]}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {points.map((pt, i) => (
+        <div key={i} className="flex items-start gap-2.5 rounded-xl px-3 py-2.5"
+          style={{ background: i % 2 === 0 ? `${color}06` : `${color}0a`, border: `1px solid ${color}16` }}>
+          <div className="flex-shrink-0 w-5 h-5 rounded-md flex items-center justify-center mt-0.5"
+            style={{ background: `${color}18`, fontSize: 9, fontWeight: 700, color, fontFamily: 'JetBrains Mono, monospace' }}>
+            {String(i + 1).padStart(2, '0')}
+          </div>
+          <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.75 }}>{pt.replace(/^[-•▸]\s*/, '')}</p>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 /* ── Mini spark bars for trend chart ────────────────────────────── */
@@ -213,7 +245,7 @@ function PredictionContent({ data }) {
             <div style={{ width: 3, height: 14, borderRadius: 2, background: '#6366f1' }} />
             <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6366f1', fontWeight: 700 }}>AI Reasoning</p>
           </div>
-          <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.85 }}>{reasoning}</p>
+          <AITextBlock text={reasoning} color="#6366f1" />
         </div>
       )}
 
@@ -371,7 +403,7 @@ function AnomalyContent({ data }) {
             <div style={{ width: 3, height: 14, borderRadius: 2, background: '#f59e0b' }} />
             <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#f59e0b', fontWeight: 700 }}>Analysis Summary</p>
           </div>
-          <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.85 }}>{summaryText}</p>
+          <AITextBlock text={summaryText} color="#f59e0b" />
         </div>
       )}
 
@@ -497,12 +529,6 @@ export default function DecisionSupport() {
         <p style={{ fontSize: 12, color: '#54546a', marginTop: 4 }}>
           IPI · AI predictions · anomaly detection · executive Q&A
         </p>
-      </motion.div>
-
-      {/* ── Executive AI Assistant — TOP ─────────────────────────────── */}
-      <motion.div variants={fadeUp}>
-        <p className="ff-label mb-3">Executive AI Assistant</p>
-        <AskAIChat defaultOpen large />
       </motion.div>
 
       {/* IPI Gauge + Pillars */}

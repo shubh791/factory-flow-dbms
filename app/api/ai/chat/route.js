@@ -20,6 +20,7 @@ export async function POST(request) {
       empCount, deptCount, prodCount, aggr, activeEmp,
       productionByProduct, deptPerf, topEmpProd,
       todayAggr, latestRecord,
+      allEmployees, allDepts, allRoles,
     ] = await Promise.all([
       prisma.employee.count(),
       prisma.department.count(),
@@ -64,6 +65,15 @@ export async function POST(request) {
         orderBy: { createdAt: 'desc' },
         include: { product: true, employee: { select: { name: true, department: { select: { name: true } } } } },
       }),
+
+      // All employees for AI lookups
+      prisma.employee.findMany({ select: { id: true, name: true, employeeCode: true, email: true, departmentId: true, roleId: true, status: true, department: { select: { name: true } }, role: { select: { title: true, level: true } } }, where: { isDeleted: false } }),
+
+      // All departments
+      prisma.department.findMany({ select: { id: true, name: true, code: true }, orderBy: { id: 'asc' } }),
+
+      // All roles
+      prisma.role.findMany({ select: { id: true, title: true, level: true }, orderBy: { level: 'asc' } }),
     ]);
 
     /* ── Product name lookup ─────────────────────────────────────── */
@@ -142,6 +152,9 @@ export async function POST(request) {
       // Pass product and employee lists for action guidance
       products:  productRows,
       employees: topEmpDetails.map(e => ({ id: e.id, name: e.name, dept: e.department?.name })),
+      allEmployees: allEmployees.map(e => ({ id: e.id, name: e.name, code: e.employeeCode, email: e.email, deptId: e.departmentId, roleId: e.roleId, dept: e.department?.name, role: e.role?.title, level: e.role?.level, status: e.status })),
+      allDepts: allDepts.map(d => ({ id: d.id, name: d.name, code: d.code })),
+      allRoles: allRoles.map(r => ({ id: r.id, title: r.title, level: r.level })),
     };
 
     const systemMsg = chatSystemPrompt(metrics);
