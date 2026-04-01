@@ -207,6 +207,7 @@ export async function GET() {
     const avgExp = employees.length
       ? (employees.reduce((s, e) => s + (e.experience ?? 0), 0) / employees.length).toFixed(1)
       : '0';
+    const activeCount = employees.filter(e => e.status === 'ACTIVE').length;
     const empByDept = {};
     employees.forEach((e) => {
       const d = e.department?.name ?? 'Unknown';
@@ -215,6 +216,28 @@ export async function GET() {
     const employeeRows = Object.entries(empByDept)
       .sort((a, b) => b[1] - a[1])
       .map(([dept, cnt]) => [dept, String(cnt), `${((cnt / employees.length) * 100).toFixed(1)}%`]);
+
+    /* ── Top producers per employee ───────────────────────────────── */
+    const empProdMap = {};
+    productions.forEach((p) => {
+      const id = p.employee?.id;
+      if (!id) return;
+      if (!empProdMap[id]) empProdMap[id] = { name: p.employee.name ?? '—', dept: p.employee.department?.name ?? '—', units: 0, defects: 0, role: p.employee.role?.title ?? '—' };
+      empProdMap[id].units   += p.units   ?? 0;
+      empProdMap[id].defects += p.defects ?? 0;
+    });
+    const topProducerRows = Object.values(empProdMap)
+      .sort((a, b) => b.units - a.units)
+      .slice(0, 15)
+      .map((e, i) => [
+        String(i + 1),
+        e.name,
+        e.dept,
+        e.role,
+        e.units.toLocaleString('en-IN'),
+        e.defects.toLocaleString('en-IN'),
+        `${e.units > 0 ? ((e.units - e.defects) / e.units * 100).toFixed(1) : 0}%`,
+      ]);
 
     /* ── Risks ────────────────────────────────────────────────────── */
     const risks = [];
@@ -254,6 +277,8 @@ export async function GET() {
     function addPage() {
       if (pg > 0) doc.addPage();
       pg++;
+      // Draw dark background first so content and footer render on top
+      doc.rect(0, 44, doc.page.width, doc.page.height - 44).fill(P.dark);
       pageHeader(doc, pg);
       pageFooter(doc, generatedAt);
     }
@@ -316,7 +341,6 @@ export async function GET() {
 
         /* ── PAGE 2 — EXECUTIVE KPI SUMMARY ─────────────────────── */
         addPage();
-        doc.rect(0, 44, doc.page.width, doc.page.height - 44).fill(P.dark);
         let y = 60;
         y = sectionTitle(doc, '01 · Executive KPI Summary', y);
 
@@ -359,7 +383,6 @@ export async function GET() {
 
         /* ── PAGE 3 — MONTHLY TREND ──────────────────────────────── */
         addPage();
-        doc.rect(0, 44, doc.page.width, doc.page.height - 44).fill(P.dark);
         y = 60;
         y = sectionTitle(doc, '02 · Monthly Production Trend', y);
         doc.fillColor(P.t2).fontSize(8.5).font('Helvetica')
@@ -377,7 +400,6 @@ export async function GET() {
 
         /* ── PAGE 4 — PRODUCT BREAKDOWN ──────────────────────────── */
         addPage();
-        doc.rect(0, 44, doc.page.width, doc.page.height - 44).fill(P.dark);
         y = 60;
         y = sectionTitle(doc, '03 · Product Performance Breakdown', y);
         doc.fillColor(P.t2).fontSize(8.5).font('Helvetica')
@@ -395,7 +417,6 @@ export async function GET() {
 
         /* ── PAGE 5 — DEPARTMENT PERFORMANCE ─────────────────────── */
         addPage();
-        doc.rect(0, 44, doc.page.width, doc.page.height - 44).fill(P.dark);
         y = 60;
         y = sectionTitle(doc, '04 · Department Performance', y);
         doc.fillColor(P.t2).fontSize(8.5).font('Helvetica')
@@ -436,17 +457,17 @@ export async function GET() {
 
         /* ── PAGE 6 — WORKFORCE ───────────────────────────────────── */
         addPage();
-        doc.rect(0, 44, doc.page.width, doc.page.height - 44).fill(P.dark);
         y = 60;
         y = sectionTitle(doc, '05 · Workforce & Employee Analytics', y);
 
-        const wk = (doc.page.width - 80 - 10) / 3;
+        const wk = (doc.page.width - 80 - 10) / 4;
         [
-          { label: 'Total Workforce', value: String(employees.length), sub: 'Active employees', accent: P.indigo },
-          { label: 'Avg Experience',  value: `${avgExp} yrs`, sub: 'Across all roles', accent: P.green },
-          { label: 'Active Roles',    value: String(roles.length), sub: 'Hierarchy levels', accent: P.purple },
+          { label: 'Total Workforce', value: String(employees.length),  sub: 'All employees',       accent: P.indigo },
+          { label: 'Active',          value: String(activeCount),        sub: 'Currently active',    accent: P.green  },
+          { label: 'Avg Experience',  value: `${avgExp} yrs`,           sub: 'Across all roles',    accent: P.teal   },
+          { label: 'Active Roles',    value: String(roles.length),       sub: 'Hierarchy levels',    accent: P.purple },
         ].forEach(({ label, value, sub, accent }, i) => {
-          kpiBox(doc, 40 + i * (wk + 5), y, wk, 52, label, value, sub, accent);
+          kpiBox(doc, 40 + i * (wk + 4), y, wk - 1, 52, label, value, sub, accent);
         });
         y += 68;
 
@@ -461,7 +482,7 @@ export async function GET() {
         // Promotions
         if (promotions.length > 0 && y < doc.page.height - 100) {
           y = sectionTitle(doc, `Recent Promotions (${promotions.length} total)`, y);
-          promotions.slice(0, 6).forEach((p) => {
+          promotions.slice(0, 5).forEach((p) => {
             doc.circle(46, y + 5, 2).fill(P.purple);
             const txt = `${p.employee?.name ?? 'Unknown'}  ·  ${p.oldRole?.title ?? '?'} → ${p.newRole?.title ?? '?'}  ·  ${new Date(p.promotedAt).toLocaleDateString('en-IN')}`;
             doc.fillColor(P.t2).fontSize(8.5).font('Helvetica').text(txt, 54, y, { width: doc.page.width - 96 });
@@ -469,9 +490,26 @@ export async function GET() {
           });
         }
 
+        /* ── PAGE 6b — TOP EMPLOYEE PRODUCERS ────────────────────── */
+        addPage();
+        y = 60;
+        y = sectionTitle(doc, '05b · Top Employee Producers', y);
+        doc.fillColor(P.t2).fontSize(8.5).font('Helvetica')
+           .text('Employees ranked by total units produced. Includes defect rate and department.', 40, y, { width: doc.page.width - 80 });
+        y += 20;
+
+        drawTable(doc, 40, y, [
+          { label: '#',           width: 24,  mono: true, color: () => P.t3      },
+          { label: 'Employee',    width: 90,  bold: true, color: () => P.t1      },
+          { label: 'Department',  width: 80,  color: () => P.t2                  },
+          { label: 'Role',        width: 70,  color: () => P.t2                  },
+          { label: 'Units',       width: 60,  mono: true, color: () => P.green   },
+          { label: 'Defects',     width: 50,  mono: true, color: () => P.red     },
+          { label: 'Efficiency',  width: 60,  color: (v) => parseFloat(v) >= 90 ? P.green : parseFloat(v) >= 75 ? P.amber : P.red },
+        ], topProducerRows);
+
         /* ── PAGE 7 — FINANCIAL SUMMARY ──────────────────────────── */
         addPage();
-        doc.rect(0, 44, doc.page.width, doc.page.height - 44).fill(P.dark);
         y = 60;
         y = sectionTitle(doc, '06 · Financial Summary', y);
 
@@ -500,7 +538,6 @@ export async function GET() {
 
         /* ── PAGE 8 — DEFECT & RISK ──────────────────────────────── */
         addPage();
-        doc.rect(0, 44, doc.page.width, doc.page.height - 44).fill(P.dark);
         y = 60;
         y = sectionTitle(doc, '07 · Defect & Quality Risk Analysis', y);
 
@@ -535,7 +572,6 @@ export async function GET() {
 
         /* ── PAGE 9 — AI STRATEGIC INSIGHTS ─────────────────────── */
         addPage();
-        doc.rect(0, 44, doc.page.width, doc.page.height - 44).fill(P.dark);
         y = 60;
         y = sectionTitle(doc, '08 · AI Strategic Insights', y);
 
@@ -561,7 +597,6 @@ export async function GET() {
         (ai.recommendations ?? []).forEach((rec, i) => {
           if (y > doc.page.height - 72) {
             addPage();
-            doc.rect(0, 44, doc.page.width, doc.page.height - 44).fill(P.dark);
             y = 60;
           }
           doc.rect(40, y, doc.page.width - 80, 34).fill(P.card);
@@ -573,7 +608,6 @@ export async function GET() {
 
         /* ── CLOSING PAGE ─────────────────────────────────────────── */
         addPage();
-        doc.rect(0, 44, doc.page.width, doc.page.height - 44).fill(P.dark);
         const cy2 = doc.page.height / 2 - 50;
         doc.rect(doc.page.width / 2 - 1, cy2 - 20, 2, 70).fill(P.indigo);
         doc.fillColor(P.t1).fontSize(18).font('Helvetica-Bold')

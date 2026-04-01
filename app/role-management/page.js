@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaTimes, FaSave, FaUsers } from 'react-icons/fa';
 import API from '@/lib/api';
+import { emit, DataEvents } from '@/lib/events';
 
 export default function RoleManagementPage() {
   const [roles, setRoles] = useState([]);
@@ -43,6 +44,7 @@ export default function RoleManagementPage() {
         description: formData.description || null,
       });
       fetchData();
+      emit(DataEvents.ROLES_CHANGED);
       closeModal();
       alert('Role created successfully!');
     } catch (error) {

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { FaIndustry, FaUsers, FaTachometerAlt, FaExclamationTriangle, FaBrain, FaArrowRight } from 'react-icons/fa';
 import dynamic from 'next/dynamic';
-import API from '@/lib/api';
+import { useFactoryData } from '@/lib/hooks/useFactoryData';
+import { DataEvents } from '@/lib/events';
 import AICommandCenter from '@/components/ai/AICommandCenter';
 import KPIStats from '@/components/charts/KPIStats';
 
@@ -13,21 +14,17 @@ const ProductionChart = dynamic(() => import('@/components/charts/ProductionChar
 const EfficiencyChart = dynamic(() => import('@/components/charts/EfficiencyChart'), { ssr: false });
 
 export default function Dashboard() {
-  const [summary, setSummary] = useState(null);
-  const [production, setProduction] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showAI, setShowAI] = useState(false);
+  // Real-time: auto-refresh when production or employee data changes anywhere in the app
+  const { data: summary, loading: loadingSummary } = useFactoryData('/analytics/executive-summary', {
+    listenTo: [DataEvents.PRODUCTION_CHANGED, DataEvents.EMPLOYEES_CHANGED],
+  });
+  const { data: prodData, loading: loadingProd } = useFactoryData('/production', {
+    listenTo: [DataEvents.PRODUCTION_CHANGED],
+  });
 
-  useEffect(() => {
-    Promise.all([
-      API.get('/analytics/executive-summary'),
-      API.get('/production')
-    ]).then(([summaryRes, prodRes]) => {
-      setSummary(summaryRes.data);
-      setProduction(prodRes.data || []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
+  const production = useMemo(() => prodData || [], [prodData]);
+  const loading    = loadingSummary || loadingProd;
+  const showAI     = false;
 
   if (loading) {
     return (

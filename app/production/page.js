@@ -1,14 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { FaPlus, FaEdit, FaTimes, FaSave } from 'react-icons/fa';
 import API from '@/lib/api';
+import { useFactoryData, invalidateCache } from '@/lib/hooks/useFactoryData';
+import { emit, DataEvents } from '@/lib/events';
 
 export default function ProductionPage() {
-  const [production, setProduction] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: prodData,  loading, refresh: refreshProd } = useFactoryData('/production');
+  const { data: productsData }                             = useFactoryData('/products');
+  const { data: empData }                                  = useFactoryData('/employees');
+
+  const production = useMemo(() => prodData     || [], [prodData]);
+  const products   = useMemo(() => productsData || [], [productsData]);
+  const employees  = useMemo(() => empData      || [], [empData]);
+
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,25 +26,10 @@ export default function ProductionPage() {
     shift: 'MORNING',
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [prodRes, productsRes, empRes] = await Promise.all([
-        API.get('/production'),
-        API.get('/products'),
-        API.get('/employees'),
-      ]);
-      setProduction(prodRes.data || []);
-      setProducts(productsRes.data || []);
-      setEmployees(empRes.data || []);
-      setLoading(false);
-    } catch (error) {
-      console.error('Fetch error:', error);
-      setLoading(false);
-    }
+  const fetchData = () => {
+    invalidateCache(['/production', '/products', '/employees', '/analytics/executive-summary']);
+    refreshProd();
+    emit(DataEvents.PRODUCTION_CHANGED);
   };
 
   const handleSubmit = async (e) => {

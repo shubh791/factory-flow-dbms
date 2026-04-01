@@ -1,0 +1,168 @@
+FactoryFlow DBMS — How It Works (Simple Language)
+==================================================
+
+FOLDER STRUCTURE — What Each Folder Does
+-----------------------------------------
+
+app/
+  This is where all the pages live. Each folder = one page.
+  - page.js = the actual page content shown to users
+  - loading.jsx = a skeleton shown while the page loads data
+  - app/api/ = backend code that talks to the database
+
+  Key pages:
+  - / (Dashboard) — shows KPIs, charts, and recent production
+  - /employees — manage all factory workers
+  - /production — log and manage production batches
+  - /decision-support — AI forecasts and anomaly detection
+  - /role-management — manage job roles and hierarchy
+  - /promotion-management — promote employees to higher roles
+  - /export-report — download a PDF of the full system report
+
+components/
+  Reusable UI building blocks used across multiple pages.
+  - ai/ — the AI chat widget, floating button, insight panels
+  - charts/ — ECharts graphs for production and efficiency
+  - layout/ — the sidebar, top navigation bar, page shell
+
+lib/
+  Shared utilities and logic used by both pages and API routes.
+  - api.js — the central HTTP client (axios) for API calls
+  - events.js — the real-time event bus (see below)
+  - prisma.js — the database connection (Prisma client)
+  - prompts/ — templates for building AI prompts with live data
+  - hooks/useFactoryData.js — smart data fetching with caching
+
+prisma/
+  - schema.prisma — defines ALL database tables and relationships
+  - seed.js — creates sample/test data in the database
+
+
+HOW DATA FLOWS (DB → API → UI)
+--------------------------------
+
+Step 1: DATABASE (PostgreSQL)
+  Stores everything: employees, production records, roles, promotions.
+  Tables: Employee, Production, Product, Department, Role, PromotionHistory
+
+Step 2: PRISMA ORM
+  Prisma translates JavaScript code into SQL queries.
+  Example: prisma.production.findMany() runs SELECT * FROM Production
+
+Step 3: API ROUTES (app/api/)
+  Each API file handles one type of request.
+  Example: GET /api/production → reads production records from DB → returns JSON
+
+Step 4: FRONTEND HOOKS (useFactoryData)
+  Pages call API routes through useFactoryData() hook.
+  The hook caches results for 5 minutes so pages don't re-fetch on every render.
+  Example: useFactoryData('/production') → calls /api/production → shows data
+
+Step 5: REACT COMPONENTS
+  Data is displayed in tables, KPI cards, and charts.
+  When the user changes something (add/edit/delete), the page calls the API,
+  then emits a real-time event to refresh all connected pages.
+
+
+HOW WORKFORCE, PRODUCTION, AND DASHBOARD ARE CONNECTED
+-------------------------------------------------------
+
+Every production record is linked to:
+  - An Employee (who did the work)
+  - A Product (what was produced)
+  - A Department (through the employee's department)
+
+When you add a production record:
+  → Production table gets a new row
+  → Dashboard KPIs recalculate (total units, efficiency, defect rate)
+  → Charts update automatically
+  → AI assistant receives the new data on its next query
+
+When you promote an employee:
+  → Employee.roleId changes in the database
+  → PromotionHistory gets a new record (old role → new role)
+  → Dashboard's "Active Workforce" count stays the same
+  → The promotion appears in the PDF report
+
+When employee status changes (ACTIVE → ON_LEAVE):
+  → Dashboard "Active Employees" count decreases immediately
+  → The change propagates via the real-time event bus
+
+
+REAL-TIME SYNC — The Event Bus
+--------------------------------
+
+File: lib/events.js
+
+Problem: When production page adds a record, how does the dashboard update?
+Answer: The event bus.
+
+How it works:
+  1. Production page adds a record → calls emit(DataEvents.PRODUCTION_CHANGED)
+  2. Dashboard is listening to PRODUCTION_CHANGED via useFactoryData's listenTo option
+  3. Dashboard automatically invalidates its cache and re-fetches from the API
+  4. KPIs and charts update within milliseconds — NO page refresh needed
+
+Events used:
+  - PRODUCTION_CHANGED — triggered when any production record is added/edited/deleted
+  - EMPLOYEES_CHANGED — triggered when employees are added/edited/promoted
+  - ROLES_CHANGED — triggered when roles are created or edited
+  - PROMOTIONS_CHANGED — triggered after a promotion
+
+
+HOW AI READS AND UPDATES THE DATABASE
+---------------------------------------
+
+AI Reading Data:
+  When a user sends a message, the AI chat route (app/api/ai/chat/route.js):
+  1. Runs ~10 parallel database queries (Promise.all for speed):
+     - Total employee count and active count
+     - Total production count, units, defects, revenue
+     - Today's units produced (filtered by today's date)
+     - Latest production record
+     - Per-product defect rates
+     - Per-department efficiency
+     - Top 10 employee producers by units
+  2. Formats all this data into a text prompt
+  3. Sends prompt + user message to Groq AI API
+  4. Streams the response back to the browser
+
+AI Performing Actions:
+  When a user asks the AI to DO something (e.g., "Add a production record"):
+  1. The AI includes a special action block in its response:
+     ```action
+     {"type":"create_production","label":"Add Record","data":{...},"confirm":"..."}
+     ```
+  2. The chat UI detects this block and shows an "Execute" button
+  3. User clicks Execute → frontend calls POST /api/ai/action
+  4. The action route performs the actual DB operation (Prisma create/update)
+  5. Emits the appropriate real-time event (e.g., PRODUCTION_CHANGED)
+  6. All pages that show production data refresh instantly
+
+AI Caching:
+  AI insight results (forecasts, anomaly reports) are cached for 5 minutes
+  using the useAIInsights hook so the same analysis isn't re-run immediately.
+
+
+PERFORMANCE — Why Pages Load Fast
+------------------------------------
+
+1. Module-level cache (useFactoryData):
+   Data fetched from the API is stored in memory (a JavaScript Map).
+   If you navigate away and come back within 5 minutes, data loads instantly.
+
+2. Prefetching (LayoutShell):
+   When the app first loads, it immediately starts fetching the 6 most common
+   endpoints in the background so they're ready before you navigate to those pages.
+
+3. Parallel queries (API routes):
+   All database queries use Promise.all() so they run simultaneously instead of
+   one after another. This cuts wait time significantly.
+
+4. Deduplication:
+   If two components request the same data at the same time, only ONE API call
+   is made. Both components share the same response.
+
+5. Dynamic imports:
+   Heavy components (charts, AI chat) are loaded lazily (next/dynamic) so
+   the initial page renders faster.

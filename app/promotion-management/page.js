@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FaUserTie, FaArrowRight, FaSave, FaTimes } from 'react-icons/fa';
 import API from '@/lib/api';
+import { emit, DataEvents } from '@/lib/events';
 
 export default function PromotionManagement() {
   const [employees, setEmployees] = useState([]);
@@ -50,6 +51,8 @@ export default function PromotionManagement() {
         remarks: formData.remarks || null,
       });
       fetchData();
+      emit(DataEvents.PROMOTIONS_CHANGED);
+      emit(DataEvents.EMPLOYEES_CHANGED);
       closeModal();
       alert('Promotion successful!');
     } catch (error) {

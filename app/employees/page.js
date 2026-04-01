@@ -1,14 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { FaUserPlus, FaEdit, FaTimes, FaSave } from 'react-icons/fa';
 import API from '@/lib/api';
+import { useFactoryData, invalidateCache } from '@/lib/hooks/useFactoryData';
+import { emit, DataEvents } from '@/lib/events';
 
 export default function EmployeesPage() {
-  const [employees, setEmployees] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  const [roles, setRoles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: empData,  loading, refresh: refreshEmp } = useFactoryData('/employees');
+  const { data: deptData }                               = useFactoryData('/departments');
+  const { data: roleData }                               = useFactoryData('/roles');
+
+  const employees   = useMemo(() => empData  || [], [empData]);
+  const departments = useMemo(() => deptData || [], [deptData]);
+  const roles       = useMemo(() => roleData || [], [roleData]);
+
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
@@ -22,25 +28,10 @@ export default function EmployeesPage() {
     roleId: '',
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [empRes, deptRes, roleRes] = await Promise.all([
-        API.get('/employees'),
-        API.get('/departments'),
-        API.get('/roles'),
-      ]);
-      setEmployees(empRes.data || []);
-      setDepartments(deptRes.data || []);
-      setRoles(roleRes.data || []);
-      setLoading(false);
-    } catch (error) {
-      console.error('Fetch error:', error);
-      setLoading(false);
-    }
+  const fetchData = () => {
+    invalidateCache(['/employees', '/departments', '/roles', '/analytics/executive-summary']);
+    refreshEmp();
+    emit(DataEvents.EMPLOYEES_CHANGED);
   };
 
   const handleSubmit = async (e) => {

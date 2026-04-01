@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma:*)",
+      "Bash(npm run:*)",
+      "Bash(npx next:*)",
+      "Bash(node_modules/.bin/next build:*)",
+      "Bash(node -e \"require\\(''@emotion/cache''\\); require\\(''groq-sdk''\\);\")",
+      "Bash(grep -r \"PDFDocument\\\\|pdfkit\\\\|pdf\" '/d/downloads/Downloads/dbms upgrade/factory-flow-dbms/app' --include=*.js --include=*.jsx)",
+      "Bash(node -e \":*)"
+    ]
+  }
+}

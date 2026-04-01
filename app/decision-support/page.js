@@ -46,15 +46,94 @@ function safeStr(val) {
   if (val == null) return null;
   if (typeof val === 'object') return null;
   let s = String(val).trim();
-  // Remove markdown code fences
+  // Remove markdown code fences (greedy so nested content is removed)
   s = s.replace(/```[\s\S]*?```/g, '').trim();
-  // Remove entire JSON object/array blocks (including multiline)
-  s = s.replace(/\{[\s\S]*?\}/g, '').replace(/\[[\s\S]*?\]/g, '').trim();
-  // Remove any leftover key-value fragments like "key": "value"
+  // Iteratively strip JSON objects/arrays from innermost outward (handles nesting)
+  let prev;
+  do {
+    prev = s;
+    s = s.replace(/\{[^{}]*\}/g, '').replace(/\[[^\[\]]*\]/g, '').trim();
+  } while (s !== prev);
+  // Remove any leftover JSON punctuation fragments
   s = s.replace(/"[^"]+"\s*:\s*"[^"]*"/g, '').replace(/"[^"]+"\s*:\s*[\d.]+/g, '').trim();
+  // Remove bare JSON-like lines (lines that are just commas, brackets, or quotes)
+  s = s.split('\n').filter(line => !/^\s*[,\[\]{}"\d]+\s*$/.test(line)).join('\n');
   // Collapse multiple newlines/spaces
   s = s.replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();
   return s.length > 5 ? s : null;
+}
+
+/* ── Mini spark bars for trend chart ────────────────────────────── */
+function SparkBars({ data }) {
+  if (!data?.length) return null;
+  const maxUnits = Math.max(...data.map(d => d.units || 0), 1);
+  return (
+    <div>
+      <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600, marginBottom: 10 }}>
+        Monthly Output — {data.length} months
+      </p>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 56 }}>
+        {data.map((row, i) => {
+          const h   = Math.max(4, Math.round((row.units / maxUnits) * 52));
+          const eff = row.units > 0 ? ((row.units - row.defects) / row.units * 100) : 100;
+          const col = eff >= 92 ? '#10b981' : eff >= 80 ? '#818cf8' : eff >= 70 ? '#f59e0b' : '#f43f5e';
+          const isLast = i === data.length - 1;
+          return (
+            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+              <div title={`${row.month}: ${row.units?.toLocaleString()} units, ${eff.toFixed(1)}% eff`}
+                style={{
+                  width: '100%', height: h, borderRadius: '3px 3px 0 0',
+                  background: col,
+                  opacity: isLast ? 1 : 0.55,
+                  border: isLast ? `1px solid ${col}` : 'none',
+                  boxShadow: isLast ? `0 0 8px ${col}60` : 'none',
+                  cursor: 'default',
+                  transition: 'opacity 0.2s',
+                }}
+              />
+              {data.length <= 8 && (
+                <span style={{ fontSize: 8, color: '#3a3a5a', fontFamily: 'JetBrains Mono, monospace', whiteSpace: 'nowrap' }}>
+                  {row.month?.slice(0, 3)}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {/* Predicted next bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+        <div style={{ width: 10, height: 10, borderRadius: 2, background: '#6366f1', opacity: 0.8 }} />
+        <span style={{ fontSize: 10, color: '#54546a' }}>Historical output — brighter = next period forecast</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Confidence arc ──────────────────────────────────────────────── */
+function ConfidenceArc({ value }) {
+  const r = 28, cx = 36, cy = 36, stroke = 7;
+  const circumference = Math.PI * r; // half circle
+  const offset = circumference - (value / 100) * circumference;
+  const col = value >= 75 ? '#10b981' : value >= 50 ? '#f59e0b' : '#f43f5e';
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <svg width="72" height="44" viewBox="0 0 72 44" style={{ overflow: 'visible' }}>
+        {/* Track */}
+        <path d={`M ${stroke/2} 36 A ${r} ${r} 0 0 1 ${72 - stroke/2} 36`}
+          fill="none" stroke="#1f1f28" strokeWidth={stroke} strokeLinecap="round" />
+        {/* Fill */}
+        <path d={`M ${stroke/2} 36 A ${r} ${r} 0 0 1 ${72 - stroke/2} 36`}
+          fill="none" stroke={col} strokeWidth={stroke} strokeLinecap="round"
+          strokeDasharray={circumference} strokeDashoffset={offset}
+          style={{ transition: 'stroke-dashoffset 1s ease', filter: `drop-shadow(0 0 4px ${col}80)` }} />
+        <text x="36" y="32" textAnchor="middle" fill={col}
+          style={{ fontSize: 14, fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>
+          {value}%
+        </text>
+      </svg>
+      <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600, marginTop: -4 }}>Confidence</p>
+    </div>
+  );
 }
 
 /* ── Prediction card ─────────────────────────────────────────────── */
@@ -65,83 +144,108 @@ function PredictionContent({ data }) {
     return <p style={{ fontSize: 12, color: '#54546a' }}>No prediction data available.</p>;
   }
 
-  const trendRaw  = safeStr(prediction.trend) ?? 'stable';
+  const trendRaw   = safeStr(prediction.trend) ?? 'stable';
   const trendColor = trendRaw === 'increasing' ? '#10b981' : trendRaw === 'declining' ? '#f43f5e' : '#f59e0b';
   const TrendIcon  = trendRaw === 'increasing' ? FaArrowUp : trendRaw === 'declining' ? FaArrowDown : FaMinus;
+  const confidence = prediction.confidence != null ? Number(prediction.confidence) : null;
+  const reasoning  = safeStr(prediction.reasoning) || safeStr(prediction.analysis) || safeStr(prediction.summary);
 
-  const stats = [
-    { label: 'Predicted Units',      value: prediction.predictedUnits != null ? Number(prediction.predictedUnits).toLocaleString() : null, color: '#818cf8' },
-    { label: 'Predicted Defects',    value: prediction.predictedDefects != null ? Number(prediction.predictedDefects).toLocaleString() : null, color: '#f43f5e' },
-    { label: 'Predicted Efficiency', value: prediction.predictedEfficiency != null ? `${prediction.predictedEfficiency}%` : null, color: '#10b981' },
+  const predStats = [
+    {
+      label: 'Predicted Units',
+      value: prediction.predictedUnits != null ? Number(prediction.predictedUnits).toLocaleString() : null,
+      sub: 'next period output',
+      color: '#818cf8', bg: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.18)',
+    },
+    {
+      label: 'Predicted Defects',
+      value: prediction.predictedDefects != null ? Number(prediction.predictedDefects).toLocaleString() : null,
+      sub: 'expected defective units',
+      color: '#f43f5e', bg: 'rgba(244,63,94,0.08)', border: 'rgba(244,63,94,0.18)',
+    },
+    {
+      label: 'Predicted Efficiency',
+      value: prediction.predictedEfficiency != null ? `${prediction.predictedEfficiency}%` : null,
+      sub: 'forecast quality score',
+      color: '#10b981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.18)',
+    },
   ].filter(s => s.value != null);
 
-  const reasoning = safeStr(prediction.reasoning) || safeStr(prediction.analysis) || safeStr(prediction.summary);
-
   return (
-    <div className="space-y-4">
-      {/* Trend + confidence badges */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: `${trendColor}14`, border: `1px solid ${trendColor}28` }}>
-          <TrendIcon size={9} style={{ color: trendColor }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: trendColor, textTransform: 'capitalize' }}>
-            {trendRaw} trend
-          </span>
-        </div>
-        {prediction.confidence != null && (
-          <div className="rounded-full px-3 py-1.5" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)' }}>
-            <span style={{ fontSize: 11, color: '#818cf8' }}>Confidence: {prediction.confidence}%</span>
+    <div className="space-y-5">
+
+      {/* ── Header row: trend badge + confidence + records ── */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 rounded-full px-4 py-2"
+            style={{ background: `${trendColor}12`, border: `1px solid ${trendColor}30` }}>
+            <TrendIcon size={10} style={{ color: trendColor }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: trendColor, textTransform: 'capitalize' }}>
+              {trendRaw} trend
+            </span>
           </div>
-        )}
-        {dataPoints != null && (
-          <span style={{ fontSize: 10, color: '#3a3a5a' }}>{dataPoints} records analysed</span>
-        )}
+          {dataPoints != null && (
+            <span className="rounded-full px-3 py-1.5" style={{ fontSize: 10, color: '#54546a', background: 'rgba(0,0,0,0.2)', border: '1px solid #1f1f28' }}>
+              {dataPoints} records analysed
+            </span>
+          )}
+        </div>
+        {confidence != null && <ConfidenceArc value={confidence} />}
       </div>
 
-      {/* Predicted stats grid */}
-      {stats.length > 0 && (
-        <div className="grid grid-cols-3 gap-3">
-          {stats.map((s) => (
-            <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid #1f1f28' }}>
-              <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.09em', color: '#54546a', fontWeight: 600, marginBottom: 4 }}>{s.label}</p>
-              <p style={{ fontSize: 20, fontWeight: 700, color: s.color, fontFamily: 'JetBrains Mono, monospace' }}>{s.value}</p>
+      {/* ── Big predicted stat cards ── */}
+      {predStats.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {predStats.map((s) => (
+            <div key={s.label} className="rounded-xl p-4" style={{ background: s.bg, border: `1px solid ${s.border}` }}>
+              <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.09em', color: '#54546a', fontWeight: 600, marginBottom: 6 }}>{s.label}</p>
+              <p style={{ fontSize: 26, fontWeight: 700, color: s.color, fontFamily: 'JetBrains Mono, monospace', lineHeight: 1 }}>{s.value}</p>
+              <p style={{ fontSize: 10, color: '#3a3a5a', marginTop: 5 }}>{s.sub}</p>
             </div>
           ))}
         </div>
       )}
 
-      {/* AI reasoning text */}
+      {/* ── AI Reasoning ── */}
       {reasoning && (
-        <div className="rounded-lg px-4 py-3" style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.12)' }}>
-          <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6366f1', fontWeight: 600, marginBottom: 6 }}>AI Reasoning</p>
-          <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.75 }}>{reasoning}</p>
+        <div className="rounded-xl px-4 py-4" style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.14)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <div style={{ width: 3, height: 14, borderRadius: 2, background: '#6366f1' }} />
+            <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6366f1', fontWeight: 700 }}>AI Reasoning</p>
+          </div>
+          <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.85 }}>{reasoning}</p>
         </div>
       )}
 
-      {/* Monthly trend mini-table */}
+      {/* ── Spark bar chart + table ── */}
       {monthlyTrend?.length > 0 && (
-        <div>
-          <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600, marginBottom: 8 }}>
-            Historical Trend ({monthlyTrend.length} months)
-          </p>
-          <div className="overflow-x-auto rounded-lg" style={{ border: '1px solid #1f1f28' }}>
+        <div className="rounded-xl p-4" style={{ background: 'rgba(0,0,0,0.15)', border: '1px solid #1f1f28' }}>
+          <SparkBars data={monthlyTrend} />
+          <div className="overflow-x-auto mt-4 rounded-lg" style={{ border: '1px solid #1f1f28' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
               <thead>
                 <tr style={{ background: '#0c0c0f', borderBottom: '1px solid #2c2c38' }}>
                   {['Month', 'Units', 'Defects', 'Efficiency'].map(h => (
-                    <th key={h} style={{ padding: '7px 12px', textAlign: h === 'Month' ? 'left' : 'right', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600 }}>{h}</th>
+                    <th key={h} style={{ padding: '8px 12px', textAlign: h === 'Month' ? 'left' : 'right', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600 }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {monthlyTrend.map((row, i) => {
                   const eff = row.units > 0 ? (((row.units - row.defects) / row.units) * 100).toFixed(1) : '—';
-                  const effColor = row.units > 0 ? (parseFloat(eff) >= 95 ? '#10b981' : parseFloat(eff) >= 85 ? '#f59e0b' : '#f43f5e') : '#54546a';
+                  const effN = parseFloat(eff);
+                  const effColor = isNaN(effN) ? '#54546a' : effN >= 95 ? '#10b981' : effN >= 85 ? '#f59e0b' : '#f43f5e';
+                  const isLatest = i === monthlyTrend.length - 1;
                   return (
-                    <tr key={i} style={{ borderBottom: i < monthlyTrend.length - 1 ? '1px solid #1f1f28' : 'none' }}>
-                      <td style={{ padding: '7px 12px', color: '#9090a4', fontFamily: 'JetBrains Mono, monospace' }}>{row.month}</td>
-                      <td style={{ padding: '7px 12px', textAlign: 'right', color: '#f0f0f4', fontFamily: 'JetBrains Mono, monospace' }}>{row.units?.toLocaleString()}</td>
-                      <td style={{ padding: '7px 12px', textAlign: 'right', color: row.defects > 0 ? '#f43f5e' : '#54546a', fontFamily: 'JetBrains Mono, monospace' }}>{row.defects}</td>
-                      <td style={{ padding: '7px 12px', textAlign: 'right', color: effColor, fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{eff}{eff !== '—' ? '%' : ''}</td>
+                    <tr key={i} style={{ borderBottom: i < monthlyTrend.length - 1 ? '1px solid #1f1f28' : 'none', background: isLatest ? 'rgba(99,102,241,0.04)' : 'transparent' }}>
+                      <td style={{ padding: '8px 12px', color: isLatest ? '#818cf8' : '#9090a4', fontFamily: 'JetBrains Mono, monospace', fontWeight: isLatest ? 600 : 400 }}>
+                        {row.month}{isLatest ? ' ←' : ''}
+                      </td>
+                      <td style={{ padding: '8px 12px', textAlign: 'right', color: '#f0f0f4', fontFamily: 'JetBrains Mono, monospace' }}>{row.units?.toLocaleString()}</td>
+                      <td style={{ padding: '8px 12px', textAlign: 'right', color: row.defects > 0 ? '#f43f5e' : '#54546a', fontFamily: 'JetBrains Mono, monospace' }}>{row.defects}</td>
+                      <td style={{ padding: '8px 12px', textAlign: 'right', color: effColor, fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>
+                        {eff}{eff !== '—' ? '%' : ''}
+                      </td>
                     </tr>
                   );
                 })}
@@ -154,82 +258,174 @@ function PredictionContent({ data }) {
   );
 }
 
+/* ── Risk level segmented gauge ──────────────────────────────────── */
+function RiskGauge({ level }) {
+  const levels  = ['low', 'medium', 'high', 'critical'];
+  const colors  = ['#10b981', '#f59e0b', '#f97316', '#f43f5e'];
+  const labels  = ['Low', 'Medium', 'High', 'Critical'];
+  const active  = levels.indexOf((level ?? '').toLowerCase());
+  return (
+    <div>
+      <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600, marginBottom: 8 }}>Risk Level</p>
+      <div style={{ display: 'flex', gap: 4 }}>
+        {levels.map((l, i) => {
+          const isActive = i === active;
+          const isPast   = i < active;
+          return (
+            <div key={l} style={{ flex: 1 }}>
+              <div style={{
+                height: 8, borderRadius: 4,
+                background: isActive ? colors[i] : isPast ? `${colors[i]}55` : '#1f1f28',
+                boxShadow: isActive ? `0 0 10px ${colors[i]}70` : 'none',
+                transition: 'all 0.4s ease',
+              }} />
+              <p style={{ fontSize: 8, marginTop: 4, textAlign: 'center', color: isActive ? colors[i] : '#3a3a5a', fontWeight: isActive ? 700 : 400 }}>
+                {labels[i]}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+      {active >= 0 && (
+        <div className="mt-2 rounded-lg px-3 py-2 text-center" style={{ background: `${colors[active]}10`, border: `1px solid ${colors[active]}28` }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: colors[active], textTransform: 'capitalize' }}>
+            {labels[active]} Risk
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Severity distribution bar ───────────────────────────────────── */
+function SeverityBar({ anomalies }) {
+  const high   = anomalies.filter(a => a.severity === 'high').length;
+  const medium = anomalies.filter(a => a.severity === 'medium').length;
+  const low    = anomalies.filter(a => a.severity === 'low').length;
+  const total  = anomalies.length || 1;
+  if (!anomalies.length) return null;
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600 }}>Severity Distribution</p>
+        <span style={{ fontSize: 10, color: '#54546a' }}>{anomalies.length} total</span>
+      </div>
+      <div style={{ display: 'flex', height: 10, borderRadius: 5, overflow: 'hidden', gap: 1 }}>
+        {high   > 0 && <div style={{ flex: high,   background: '#f43f5e', borderRadius: '5px 0 0 5px' }} title={`${high} high`} />}
+        {medium > 0 && <div style={{ flex: medium, background: '#f59e0b' }} title={`${medium} medium`} />}
+        {low    > 0 && <div style={{ flex: low,    background: '#10b981', borderRadius: '0 5px 5px 0' }} title={`${low} low`} />}
+      </div>
+      <div className="flex gap-4 mt-2">
+        {[['#f43f5e','High', high],['#f59e0b','Medium', medium],['#10b981','Low', low]].map(([c,l,n]) => (
+          <div key={l} className="flex items-center gap-1.5">
+            <div style={{ width: 8, height: 8, borderRadius: 2, background: c }} />
+            <span style={{ fontSize: 10, color: '#54546a' }}>{l}: <strong style={{ color: '#9090a4' }}>{n}</strong></span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ── Anomaly content ─────────────────────────────────────────────── */
 function AnomalyContent({ data }) {
   const { anomalies = [], riskLevel, summary, baseline } = data;
-
-  const riskColor = {
-    low:      '#10b981',
-    medium:   '#f59e0b',
-    high:     '#f97316',
-    critical: '#f43f5e',
-  }[riskLevel?.toLowerCase()] ?? '#9090a4';
-
   const summaryText = safeStr(summary);
 
   return (
-    <div className="space-y-4">
-      {/* Risk level + baseline stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-xl p-3 text-center col-span-2 sm:col-span-1" style={{ background: `${riskColor}0d`, border: `1px solid ${riskColor}28` }}>
-          <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600, marginBottom: 4 }}>Risk Level</p>
-          <p style={{ fontSize: 16, fontWeight: 700, color: riskColor, textTransform: 'capitalize' }}>{riskLevel ?? 'Unknown'}</p>
+    <div className="space-y-5">
+
+      {/* ── Top row: Risk gauge + baseline stats ── */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        {/* Risk gauge */}
+        <div className="rounded-xl p-4" style={{ background: 'rgba(0,0,0,0.15)', border: '1px solid #1f1f28' }}>
+          <RiskGauge level={riskLevel} />
         </div>
-        {baseline && (
-          <>
-            <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid #1f1f28' }}>
-              <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600, marginBottom: 4 }}>Avg Defect Rate</p>
-              <p style={{ fontSize: 16, fontWeight: 700, color: '#f43f5e', fontFamily: 'JetBrains Mono, monospace' }}>{baseline.avgDefectRate}%</p>
+
+        {/* Baseline stats */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label: 'Avg Defect Rate', value: baseline?.avgDefectRate != null ? `${baseline.avgDefectRate}%` : '—', color: '#f43f5e' },
+            { label: 'Std Deviation',   value: baseline?.stdDeviation  != null ? `±${baseline.stdDeviation}%` : '—', color: '#f59e0b' },
+            { label: 'Records',         value: baseline?.recordsAnalysed ?? '—', color: '#818cf8' },
+          ].map((s) => (
+            <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid #1f1f28' }}>
+              <p style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#54546a', fontWeight: 600, marginBottom: 6 }}>{s.label}</p>
+              <p style={{ fontSize: 18, fontWeight: 700, color: s.color, fontFamily: 'JetBrains Mono, monospace', lineHeight: 1 }}>{s.value}</p>
             </div>
-            <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid #1f1f28' }}>
-              <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600, marginBottom: 4 }}>Std Deviation</p>
-              <p style={{ fontSize: 16, fontWeight: 700, color: '#f59e0b', fontFamily: 'JetBrains Mono, monospace' }}>±{baseline.stdDeviation}%</p>
-            </div>
-            <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid #1f1f28' }}>
-              <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600, marginBottom: 4 }}>Records</p>
-              <p style={{ fontSize: 16, fontWeight: 700, color: '#818cf8', fontFamily: 'JetBrains Mono, monospace' }}>{baseline.recordsAnalysed}</p>
-            </div>
-          </>
-        )}
+          ))}
+        </div>
       </div>
 
-      {/* Summary */}
-      {summaryText && (
-        <div className="rounded-lg px-4 py-3" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid #1f1f28' }}>
-          <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#54546a', fontWeight: 600, marginBottom: 6 }}>Analysis Summary</p>
-          <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.75 }}>{summaryText}</p>
+      {/* ── Severity distribution ── */}
+      {anomalies.length > 0 && (
+        <div className="rounded-xl p-4" style={{ background: 'rgba(0,0,0,0.15)', border: '1px solid #1f1f28' }}>
+          <SeverityBar anomalies={anomalies} />
         </div>
       )}
 
-      {/* Anomalies list */}
+      {/* ── Analysis summary ── */}
+      {summaryText && (
+        <div className="rounded-xl px-4 py-4" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.14)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <div style={{ width: 3, height: 14, borderRadius: 2, background: '#f59e0b' }} />
+            <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#f59e0b', fontWeight: 700 }}>Analysis Summary</p>
+          </div>
+          <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.85 }}>{summaryText}</p>
+        </div>
+      )}
+
+      {/* ── Anomaly timeline ── */}
       {anomalies.length > 0 ? (
-        <div className="space-y-2">
-          <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.09em', color: '#54546a', fontWeight: 600 }}>
-            Detected Anomalies — {anomalies.length} found
+        <div>
+          <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.09em', color: '#54546a', fontWeight: 600, marginBottom: 10 }}>
+            Detected Anomalies — {anomalies.length} event{anomalies.length !== 1 ? 's' : ''}
           </p>
-          {anomalies.map((a, i) => {
-            const sevColor = a.severity === 'high' ? '#f43f5e' : a.severity === 'medium' ? '#f59e0b' : '#10b981';
-            const detail   = safeStr(a.detail) || safeStr(a.description) || safeStr(a.reason) || 'Anomaly detected';
-            const dateStr  = safeStr(a.date) || safeStr(a.timestamp) || '';
-            return (
-              <div key={i} className="rounded-lg p-3" style={{ background: 'rgba(0,0,0,0.15)', border: `1px solid ${sevColor}20` }}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="rounded px-2 py-0.5 flex-shrink-0" style={{ fontSize: 9, fontWeight: 700, background: `${sevColor}18`, color: sevColor, letterSpacing: '0.06em' }}>
-                    {a.severity?.toUpperCase() ?? 'ANOMALY'}
-                  </span>
-                  {dateStr && (
-                    <span style={{ fontSize: 10, color: '#54546a', fontFamily: 'JetBrains Mono, monospace' }}>{dateStr}</span>
-                  )}
+          <div className="space-y-2" style={{ position: 'relative' }}>
+            {/* Timeline line */}
+            <div style={{ position: 'absolute', left: 11, top: 8, bottom: 8, width: 2, background: '#1f1f28', borderRadius: 2 }} />
+
+            {anomalies.map((a, i) => {
+              const sev      = (a.severity ?? 'low').toLowerCase();
+              const sevColor = sev === 'high' ? '#f43f5e' : sev === 'medium' ? '#f59e0b' : '#10b981';
+              const typeColor= a.type === 'spike' ? '#f43f5e' : a.type === 'drop' ? '#818cf8' : '#f59e0b';
+              const detail   = safeStr(a.detail) || safeStr(a.description) || safeStr(a.reason) || 'Anomaly detected in production data';
+              const dateStr  = safeStr(a.date) || safeStr(a.timestamp) || '';
+              return (
+                <div key={i} className="flex gap-3" style={{ position: 'relative' }}>
+                  {/* Timeline dot */}
+                  <div style={{ flexShrink: 0, width: 24, display: 'flex', justifyContent: 'center', paddingTop: 10 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: sevColor, boxShadow: `0 0 6px ${sevColor}80`, border: `2px solid #17171c`, flexShrink: 0 }} />
+                  </div>
+                  {/* Card */}
+                  <div className="flex-1 rounded-xl p-3 mb-0.5" style={{ background: 'rgba(0,0,0,0.18)', border: `1px solid ${sevColor}20` }}>
+                    <div className="flex items-center gap-2 flex-wrap mb-2">
+                      <span className="rounded-md px-2 py-0.5" style={{ fontSize: 9, fontWeight: 700, background: `${sevColor}18`, color: sevColor, letterSpacing: '0.06em' }}>
+                        {sev.toUpperCase()}
+                      </span>
+                      {a.type && (
+                        <span className="rounded-md px-2 py-0.5" style={{ fontSize: 9, fontWeight: 600, background: `${typeColor}12`, color: typeColor, letterSpacing: '0.05em', textTransform: 'capitalize' }}>
+                          {a.type}
+                        </span>
+                      )}
+                      {dateStr && (
+                        <span style={{ fontSize: 10, color: '#54546a', fontFamily: 'JetBrains Mono, monospace', marginLeft: 'auto' }}>{dateStr}</span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.65 }}>{detail}</p>
+                  </div>
                 </div>
-                <p style={{ fontSize: 12.5, color: '#9090a4', lineHeight: 1.65 }}>{detail}</p>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       ) : (
-        <div className="flex items-center gap-2 rounded-lg px-4 py-3" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}>
-          <FaCheckCircle size={11} style={{ color: '#10b981' }} />
-          <span style={{ fontSize: 12.5, color: '#10b981' }}>No anomalies detected in the analysis window.</span>
+        <div className="flex items-center gap-3 rounded-xl px-5 py-4" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.18)' }}>
+          <FaCheckCircle size={16} style={{ color: '#10b981', flexShrink: 0 }} />
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 600, color: '#10b981' }}>All Clear</p>
+            <p style={{ fontSize: 12, color: '#54546a', marginTop: 2 }}>No anomalies detected in the analysis window. Production quality is stable.</p>
+          </div>
         </div>
       )}
     </div>
