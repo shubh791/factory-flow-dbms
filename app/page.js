@@ -6,12 +6,11 @@ import Link from 'next/link';
 import {
   FaIndustry, FaUsers, FaTachometerAlt, FaExclamationTriangle,
   FaArrowRight, FaArrowUp, FaArrowDown, FaMinus,
-  FaChartLine, FaCalendarDay, FaMoneyBillWave,
+  FaCalendarDay, FaMoneyBillWave,
 } from 'react-icons/fa';
 import dynamic from 'next/dynamic';
 import { useFactoryData } from '@/lib/hooks/useFactoryData';
 import { DataEvents } from '@/lib/events';
-import AskAIChat from '@/components/ai/AskAIChat';
 
 const ProductionChart = dynamic(() => import('@/components/charts/ProductionChart'), { ssr: false });
 const EfficiencyChart = dynamic(() => import('@/components/charts/EfficiencyChart'), { ssr: false });
@@ -168,72 +167,66 @@ export default function Dashboard() {
         <EfficiencyChart records={production} />
       </div>
 
-      {/* Bottom grid: recent records + AI chat */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-
-        {/* Recent Production Table — 2/3 width */}
-        <div className="xl:col-span-2 industrial-card-elevated p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">Recent Production Records</h3>
-              <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Latest entries from production database</p>
-            </div>
-            <Link href="/production" className="btn-industrial btn-secondary text-xs flex items-center gap-2">
-              <span>View All</span>
-              <FaArrowRight size={10} />
-            </Link>
+      {/* Recent Production Table */}
+      <div className="industrial-card-elevated p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Recent Production Records</h3>
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Latest entries from production database</p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="table-industrial">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Units</th>
-                  <th>Defects</th>
-                  <th>Efficiency</th>
-                  <th>Shift</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {production.length === 0 ? (
-                  <tr><td colSpan={6} className="text-center text-[var(--text-muted)] py-8 text-sm">No production records yet</td></tr>
-                ) : production.slice(0, 10).map((record, idx) => {
-                  const eff = record.units > 0 ? ((record.units - record.defects) / record.units * 100) : 0;
-                  return (
-                    <tr key={idx}>
-                      <td className="font-medium">{record.product?.name || 'N/A'}</td>
-                      <td>{record.units.toLocaleString()}</td>
-                      <td>
-                        <span className={(record.defects / record.units * 100) > 5 ? 'text-[var(--color-danger)]' : ''}>
-                          {record.defects}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={eff >= 95 ? 'text-[var(--color-success)]' : eff >= 85 ? 'text-[var(--color-warning)]' : 'text-[var(--color-danger)]'}>
-                          {eff.toFixed(1)}%
-                        </span>
-                      </td>
-                      <td><span className="badge badge-neutral text-[10px]">{record.shift}</span></td>
-                      <td>
-                        <div className="flex items-center gap-1.5">
-                          <div className={`status-dot ${eff >= 95 ? 'status-active' : eff >= 85 ? 'status-warning' : 'status-error'}`} />
-                          <span className="text-xs">{eff >= 95 ? 'Excellent' : eff >= 85 ? 'Normal' : 'Review'}</span>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <Link href="/production" className="btn-industrial btn-secondary text-xs flex items-center gap-2">
+            <span>View All</span>
+            <FaArrowRight size={10} />
+          </Link>
         </div>
-
-        {/* AI Chat — 1/3 width */}
-        <div className="xl:col-span-1">
-          <AskAIChat defaultOpen={true} compact={true} />
+        <div className="overflow-x-auto">
+          <table className="table-industrial">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Units</th>
+                <th>Defects</th>
+                <th>Efficiency</th>
+                <th>Shift</th>
+                <th>Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {production.length === 0 ? (
+                <tr><td colSpan={7} className="text-center text-[var(--text-muted)] py-8 text-sm">No production records yet</td></tr>
+              ) : production.slice(0, 10).map((record, idx) => {
+                const eff = record.units > 0 ? ((record.units - record.defects) / record.units * 100) : 0;
+                return (
+                  <tr key={idx}>
+                    <td className="font-medium">{record.product?.name || 'N/A'}</td>
+                    <td>{record.units.toLocaleString()}</td>
+                    <td>
+                      <span className={(record.defects / record.units * 100) > 5 ? 'text-[var(--color-danger)]' : ''}>
+                        {record.defects}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={eff >= 95 ? 'text-[var(--color-success)]' : eff >= 85 ? 'text-[var(--color-warning)]' : 'text-[var(--color-danger)]'}>
+                        {eff.toFixed(1)}%
+                      </span>
+                    </td>
+                    <td><span className="badge badge-neutral text-[10px]">{record.shift}</span></td>
+                    <td className="text-xs text-[var(--text-tertiary)]">
+                      {new Date(record.productionDate).toLocaleDateString()}
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-1.5">
+                        <div className={`status-dot ${eff >= 95 ? 'status-active' : eff >= 85 ? 'status-warning' : 'status-error'}`} />
+                        <span className="text-xs">{eff >= 95 ? 'Excellent' : eff >= 85 ? 'Normal' : 'Review'}</span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-
       </div>
     </div>
   );
