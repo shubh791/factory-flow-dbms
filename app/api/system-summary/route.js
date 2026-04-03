@@ -35,6 +35,7 @@ export async function GET() {
     /* ── Ask Groq for structured analysis ─────────────────────── */
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
+      max_tokens: 500,
       messages: [
         {
           role:    'system',

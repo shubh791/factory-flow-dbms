@@ -38,24 +38,37 @@ function PillarBar({ title, value, color }) {
   );
 }
 
-/* ── Safe text — strips all embedded JSON, code fences, raw objects ─ */
+/* ── Safe text — strips embedded JSON, code fences, Python code ─ */
+const CODE_LINE = /^\s*(def |import |print\(|#|for |if |elif |else:|return |result\s*=|data\s*=|response\s*=|anomalies\s*=|predicted_|total_|average_|spike_|drop_|np\.|\.append\(|risk_level|confidence\s*=)/i;
+const CODE_HEAVY = /def |import |\.append\(|polyfit|enumerate\(|np\.|total_units|total_defects|spike_threshold|drop_threshold/i;
+
 function safeStr(val) {
   if (val == null) return null;
   if (typeof val === 'object') return null;
   let s = String(val).trim();
-  // Remove markdown code fences (greedy so nested content is removed)
+
+  // If the raw value is clearly Python code, reject entirely
+  if (CODE_HEAVY.test(s)) return null;
+
+  // Remove ALL markdown code fences (any language tag)
   s = s.replace(/```[\s\S]*?```/g, '').trim();
-  // Iteratively strip JSON objects/arrays from innermost outward (handles nesting)
+
+  // Iteratively strip JSON objects/arrays
   let prev;
   do {
     prev = s;
     s = s.replace(/\{[^{}]*\}/g, '').replace(/\[[^\[\]]*\]/g, '').trim();
   } while (s !== prev);
-  // Remove any leftover JSON punctuation fragments
+
+  // Remove leftover JSON key-value fragments
   s = s.replace(/"[^"]+"\s*:\s*"[^"]*"/g, '').replace(/"[^"]+"\s*:\s*[\d.]+/g, '').trim();
-  // Remove bare JSON-like lines (lines that are just commas, brackets, or quotes)
-  s = s.split('\n').filter(line => !/^\s*[,\[\]{}"\d]+\s*$/.test(line)).join('\n');
-  // Collapse multiple newlines/spaces
+
+  // Remove lines that look like code or bare punctuation
+  s = s.split('\n')
+    .filter(line => !CODE_LINE.test(line) && !/^\s*[,\[\]{}"\d:]+\s*$/.test(line))
+    .join('\n');
+
+  // Collapse whitespace
   s = s.replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();
   return s.length > 5 ? s : null;
 }
@@ -240,12 +253,14 @@ function PredictionContent({ data }) {
 
       {/* ── AI Reasoning ── */}
       {reasoning && (
-        <div className="rounded-xl px-4 py-4" style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.14)' }}>
-          <div className="flex items-center gap-2 mb-3">
-            <div style={{ width: 3, height: 14, borderRadius: 2, background: '#6366f1' }} />
-            <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6366f1', fontWeight: 700 }}>AI Reasoning</p>
+        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(99,102,241,0.16)' }}>
+          <div className="flex items-center gap-2.5 px-4 py-3" style={{ background: 'rgba(99,102,241,0.07)', borderBottom: '1px solid rgba(99,102,241,0.12)' }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1', boxShadow: '0 0 6px #6366f180' }} />
+            <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#818cf8', fontWeight: 700 }}>AI Forecast Reasoning</p>
           </div>
-          <AITextBlock text={reasoning} color="#6366f1" />
+          <div className="px-4 py-4" style={{ background: 'rgba(99,102,241,0.03)' }}>
+            <AITextBlock text={reasoning} color="#6366f1" />
+          </div>
         </div>
       )}
 
@@ -464,13 +479,92 @@ function AnomalyContent({ data }) {
   );
 }
 
+/* ── AI Analysis Summary cards (strengths / risks / recommendations) */
+function AnalysisSummary({ analysis }) {
+  if (!analysis || typeof analysis !== 'object') return null;
+
+  const sections = [
+    {
+      key: 'strengths',
+      title: 'System Strengths',
+      icon: FaCheckCircle,
+      color: '#10b981',
+      bg: 'rgba(16,185,129,0.06)',
+      border: 'rgba(16,185,129,0.16)',
+    },
+    {
+      key: 'risks',
+      title: 'Risk Factors',
+      icon: FaExclamationTriangle,
+      color: '#f43f5e',
+      bg: 'rgba(244,63,94,0.06)',
+      border: 'rgba(244,63,94,0.16)',
+    },
+    {
+      key: 'recommendations',
+      title: 'Strategic Recommendations',
+      icon: FaChartLine,
+      color: '#818cf8',
+      bg: 'rgba(99,102,241,0.06)',
+      border: 'rgba(99,102,241,0.16)',
+    },
+  ];
+
+  return (
+    <div className="grid md:grid-cols-3 gap-4">
+      {sections.map(({ key, title, icon: Icon, color, bg, border }) => {
+        const items = (Array.isArray(analysis[key]) ? analysis[key] : [])
+          .filter(item => typeof item === 'string' && !/python|backend|import\s+\w|def\s+\w|\.env|api_key/i.test(item));
+        return (
+          <div key={key} className="rounded-xl overflow-hidden" style={{ background: '#17171c', border: '1px solid #1f1f28' }}>
+            <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid #1f1f28' }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: bg, border: `1px solid ${border}` }}>
+                <Icon size={11} style={{ color }} />
+              </div>
+              <p style={{ fontSize: 12.5, fontWeight: 600, color: '#f0f0f4' }}>{title}</p>
+              {items.length > 0 && (
+                <span className="ml-auto rounded-full px-2 py-0.5" style={{ fontSize: 9, fontWeight: 700, background: bg, color, border: `1px solid ${border}` }}>
+                  {items.length}
+                </span>
+              )}
+            </div>
+            {items.length > 0 ? (
+              <ul>
+                {items.map((item, i) => (
+                  <li key={i} className="flex items-start gap-3 px-4 py-3" style={{ borderBottom: i < items.length - 1 ? '1px solid #1f1f28' : 'none' }}>
+                    <span className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5"
+                      style={{ background: bg, color, fontSize: 8, fontWeight: 800, fontFamily: 'JetBrains Mono, monospace' }}>
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <span style={{ fontSize: 12, color: '#9090a4', lineHeight: 1.65 }}>
+                      {typeof item === 'string' ? item : JSON.stringify(item)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="px-4 py-6 text-center" style={{ fontSize: 12, color: '#3a3a5a' }}>No data available.</div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ── Main page ───────────────────────────────────────────────────── */
 export default function DecisionSupport() {
-  const [metrics, setMetrics] = useState(null);
+  const [metrics,  setMetrics]  = useState(null);
+  const [analysis, setAnalysis] = useState(null);
 
   useEffect(() => {
     API.get('/system-summary')
-      .then((res) => setMetrics(res.data.metrics))
+      .then((res) => {
+        setMetrics(res.data.metrics);
+        if (res.data.analysis && typeof res.data.analysis === 'object' && res.data.analysis.strengths) {
+          setAnalysis(res.data.analysis);
+        }
+      })
       .catch(console.error);
   }, []);
 
@@ -603,6 +697,14 @@ export default function DecisionSupport() {
           renderContent={(data) => <AnomalyContent data={data} />}
         />
       </motion.div>
+
+      {/* AI Analysis Summary */}
+      {analysis && (
+        <motion.div variants={fadeUp}>
+          <p className="ff-label mb-3">AI Analysis Summary · Strengths · Risks · Recommendations</p>
+          <AnalysisSummary analysis={analysis} />
+        </motion.div>
+      )}
 
     </motion.div>
   );

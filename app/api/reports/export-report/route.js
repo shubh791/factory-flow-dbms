@@ -291,7 +291,7 @@ export async function GET() {
     try {
       const prompt = `Industrial analytics AI. Metrics: units=${totalUnits}, defects=${totalDefects}, efficiency=${efficiency.toFixed(1)}%, defectRate=${defectRate.toFixed(1)}%, employees=${employees.length}, depts=${departments.length}, revenue=${totalRevenue.toFixed(0)}, profit=${grossProfit.toFixed(0)}, margin=${profitMargin.toFixed(1)}%. Return ONLY JSON: {"strengths":["...","...","..."],"recommendations":["...","...","...","...","..."],"outlook":"2-3 sentence executive outlook"}`;
       const resp = await groq.chat.completions.create({
-        model: 'llama-3.1-8b-instant',
+        model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
         max_tokens: 550,

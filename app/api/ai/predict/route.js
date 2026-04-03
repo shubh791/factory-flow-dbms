@@ -48,7 +48,7 @@ export async function GET() {
     });
 
     const completion = await groq.chat.completions.create({
-      model:       'llama-3.1-8b-instant',
+      model:       'llama-3.3-70b-versatile',
       messages:    [{ role: 'user', content: prompt }],
       temperature: 0.2,
       max_tokens:  400,
@@ -56,12 +56,39 @@ export async function GET() {
 
     const raw = completion.choices[0]?.message?.content ?? '{}';
 
+    /* ── Parse AI JSON; fall back to pure maths if model returns code ── */
     let prediction;
+    const looksLikeCode = (s) => /def |import |print\(|python|=\s*\[|\.append\(|polyfit|np\./i.test(s);
+
     try {
-      const cleaned = raw.replace(/```json\n?|\n?```/g, '').trim();
-      prediction = JSON.parse(cleaned);
+      const cleaned = raw.replace(/```[\s\S]*?```/g, '').trim();
+      const parsed  = JSON.parse(cleaned);
+      // Scrub any code-tainted string fields before using
+      if (parsed && typeof parsed === 'object') {
+        ['reasoning','analysis','summary'].forEach(k => {
+          if (typeof parsed[k] === 'string' && looksLikeCode(parsed[k])) delete parsed[k];
+        });
+      }
+      prediction = parsed;
     } catch {
-      prediction = { reasoning: raw };
+      // Model returned code or garbage — compute statistically from our own data
+      const last  = monthlyTrend.slice(-3);
+      const units = last.map(m => m.units);
+      const defs  = last.map(m => m.defects);
+      const avgU  = units.reduce((s, v) => s + v, 0) / (units.length || 1);
+      const avgD  = defs.reduce((s, v) => s + v, 0)  / (defs.length  || 1);
+      const trend = units.length >= 2
+        ? (units[units.length - 1] > units[0] ? 'increasing' : units[units.length - 1] < units[0] ? 'declining' : 'stable')
+        : 'stable';
+      const predEff = avgU > 0 ? Math.round(((avgU - avgD) / avgU) * 100) : 0;
+      prediction = {
+        predictedUnits:      Math.round(avgU),
+        predictedDefects:    Math.round(avgD),
+        predictedEfficiency: predEff,
+        trend,
+        confidence: 65,
+        reasoning: `Based on the last ${last.length} months of production data: average output ${Math.round(avgU).toLocaleString()} units/month with ${trend} trend and ${predEff}% efficiency.`,
+      };
     }
 
     return NextResponse.json({

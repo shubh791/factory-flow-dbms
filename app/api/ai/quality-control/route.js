@@ -102,7 +102,7 @@ Provide:
 Respond with valid JSON only.`;
 
     const completion = await groq.chat.completions.create({
-      model: 'llama-3.1-8b-instant',
+      model: 'llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.2,
       max_tokens: 900,

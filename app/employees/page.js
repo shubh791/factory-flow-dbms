@@ -20,6 +20,7 @@ export default function EmployeesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null); // { id, name }
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
   const [formData, setFormData] = useState({
     id: null,
     name: '',
@@ -127,6 +128,17 @@ export default function EmployeesPage() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    try {
+      await API.delete('/employees/clear');
+      fetchData();
+    } catch (error) {
+      alert(error.response?.data?.error || 'Delete all failed');
+    } finally {
+      setConfirmDeleteAll(false);
+    }
+  };
+
   const stats = {
     total: employees.length,
     active: employees.filter(e => e.status === 'ACTIVE').length,
@@ -149,10 +161,16 @@ export default function EmployeesPage() {
           <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-1">Workforce Management</h1>
           <p className="text-sm text-[var(--text-secondary)]">Employee records, performance, and resource allocation</p>
         </div>
-        <button onClick={openAddModal} className="btn-industrial btn-primary flex items-center gap-2">
-          <FaUserPlus size={12} />
-          <span>Add Employee</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setConfirmDeleteAll(true)} className="btn-industrial flex items-center gap-2" style={{ background: 'var(--color-danger)', color: '#fff', border: 'none' }}>
+            <FaTrash size={12} />
+            <span>Delete All Records</span>
+          </button>
+          <button onClick={openAddModal} className="btn-industrial btn-primary flex items-center gap-2">
+            <FaUserPlus size={12} />
+            <span>Add Employee</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid-industrial-3">
@@ -266,6 +284,34 @@ export default function EmployeesPage() {
               >
                 <FaTrash size={11} />
                 Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDeleteAll && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="industrial-card-elevated w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-[var(--color-danger)]/10 flex items-center justify-center">
+                <FaExclamationTriangle size={18} className="text-[var(--color-danger)]" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">Delete All Records?</h3>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">This action cannot be undone.</p>
+              </div>
+            </div>
+            <p className="text-sm text-[var(--text-secondary)] mb-6">
+              This will permanently delete <strong className="text-[var(--text-primary)]">all {employees.length} employees</strong> and all their associated data.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDeleteAll(false)} className="btn-industrial btn-secondary flex-1">
+                Cancel
+              </button>
+              <button onClick={handleDeleteAll} className="btn-industrial flex-1 flex items-center justify-center gap-2" style={{ background: 'var(--color-danger)', color: '#fff', border: 'none' }}>
+                <FaTrash size={11} />
+                Yes, Delete All
               </button>
             </div>
           </div>

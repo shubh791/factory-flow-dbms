@@ -22,12 +22,12 @@ const QUERY_CHIPS = [
 ];
 
 const ACTION_CHIPS = [
-  { label: '➕ Add employee',    q: 'Add a new employee named John Doe with code EMP099.' },
-  { label: '📦 Log production',  q: 'Add a production record with 500 units and 5 defects for the first product, morning shift.' },
-  { label: '🔄 Status change',   q: 'Set employee EMP001 status to on_leave.' },
-  { label: '📧 Update email',    q: 'Update email for employee EMP001 to john@example.com.' },
-  { label: '⬆ Promote',         q: 'Promote employee EMP001 to the next role.' },
-  { label: '🗑 Delete record',   q: 'Delete production record with ID 1.' },
+  { label: '➕ Add employee',    q: 'I want to add a new employee.' },
+  { label: '📦 Log production',  q: 'Log a new production record.' },
+  { label: '🔄 Update employee', q: 'I want to update an employee.' },
+  { label: '📧 Update email',    q: 'Update the email of an employee.' },
+  { label: '⬆ Promote',         q: 'Promote an employee to the next role.' },
+  { label: '🗑 Delete employee', q: 'Delete an employee.' },
 ];
 
 /* ── Auto-generate narrative when AI skips it ────────────────────────── */
@@ -48,12 +48,47 @@ function narrativeFromAction(action) {
 
 /* ── Parse action block ──────────────────────────────────────────────── */
 function parseActionBlock(text) {
-  const match = text.match(/```action\s*([\s\S]*?)\s*```/);
-  if (!match) return null;
-  try { return JSON.parse(match[1].trim()); } catch { return null; }
+  // 1. Try fenced ```action block (ideal format)
+  const fenced = text.match(/```action\s*([\s\S]*?)\s*```/);
+  if (fenced) {
+    try { return JSON.parse(fenced[1].trim()); } catch {}
+  }
+  // 2. Fallback: model forgot the fence — find any {"type":..., "data":...} JSON object
+  const idx = text.indexOf('{"type"');
+  if (idx !== -1) {
+    let depth = 0, i = idx;
+    while (i < text.length) {
+      if (text[i] === '{') depth++;
+      else if (text[i] === '}') { depth--; if (depth === 0) break; }
+      i++;
+    }
+    if (i < text.length) {
+      try {
+        const parsed = JSON.parse(text.slice(idx, i + 1));
+        if (parsed.type && parsed.data) return parsed;
+      } catch {}
+    }
+  }
+  return null;
 }
+
 function stripActionBlock(text) {
-  return text.replace(/```action[\s\S]*?```/g, '').trim();
+  // Remove fenced action blocks
+  let out = text.replace(/```action[\s\S]*?```/g, '');
+  // Remove action type label lines the model sometimes adds, e.g. "update_employee:"
+  out = out.replace(/^(create|update|delete|promote)_\w+\s*:?\s*$/gm, '');
+  // Remove bare JSON action objects (brace-count to handle nested objects)
+  const idx = out.indexOf('{"type"');
+  if (idx !== -1) {
+    let depth = 0, i = idx;
+    while (i < out.length) {
+      if (out[i] === '{') depth++;
+      else if (out[i] === '}') { depth--; if (depth === 0) break; }
+      i++;
+    }
+    if (i < out.length) out = out.slice(0, idx) + out.slice(i + 1);
+  }
+  return out.trim();
 }
 
 /* ── Markdown renderer ───────────────────────────────────────────────── */
@@ -104,20 +139,23 @@ function ActionCard({ action, onDismiss }) {
 
   const execute = async () => {
     setState('running');
+    setMsg('');
     try {
       const res = await API.post('/ai/action', { type: action.type, data: action.data });
-      setMsg(res.data.message || 'Done');
-      setState('done');
-      const t = action.type;
-      if (t.includes('production')) invalidateCache(['/production', '/analytics/executive-summary']);
-      if (t.includes('employee') || t.includes('promote') || t === 'update_employee_status')
-        invalidateCache(['/employees', '/analytics/executive-summary']);
-      if (t.includes('production'))  emit(DataEvents.PRODUCTION_CHANGED);
-      if (t.includes('employee') || t.includes('promote') || t === 'update_employee_status')
-        emit(DataEvents.EMPLOYEES_CHANGED);
-      if (t.includes('promote'))     emit(DataEvents.PROMOTIONS_CHANGED);
-      if (t.includes('role'))        emit(DataEvents.ROLES_CHANGED);
+      // Invalidate ALL caches immediately so every page reflects the change
+      invalidateCache([
+        '/production', '/employees', '/departments', '/roles', '/products',
+        '/analytics/executive-summary', '/analytics/production/insights',
+        '/analytics/department/performance',
+      ]);
+      // Fire all relevant events so live components re-fetch instantly
+      emit(DataEvents.PRODUCTION_CHANGED);
+      emit(DataEvents.EMPLOYEES_CHANGED);
+      emit(DataEvents.PROMOTIONS_CHANGED);
+      emit(DataEvents.ROLES_CHANGED);
       emit(DataEvents.ANY);
+      setMsg(res.data.message || 'Done ✓');
+      setState('done');
     } catch (err) {
       setMsg(err.response?.data?.error || 'Action failed — please try again.');
       setState('error');
@@ -213,13 +251,16 @@ function ActionCard({ action, onDismiss }) {
         {state === 'running' && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 10,
-            padding: '10px 14px', borderRadius: 10,
-            background: 'rgba(99,102,241,0.07)',
-            border: '1px solid rgba(99,102,241,0.15)',
+            padding: '12px 14px', borderRadius: 10,
+            background: 'linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.08))',
+            border: '1px solid rgba(99,102,241,0.25)',
             color: '#818cf8', fontSize: 12.5,
           }}>
-            <FaSpinner size={12} style={{ animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />
-            <span>Executing <strong style={{ color: '#a5b4fc' }}>{actionLabel}</strong>…</span>
+            <FaSpinner size={13} style={{ animation: 'spin 0.6s linear infinite', flexShrink: 0, color: '#a5b4fc' }} />
+            <div>
+              <div style={{ fontWeight: 700, color: '#a5b4fc', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Updating database…</div>
+              <div style={{ fontSize: 12 }}>Executing <strong style={{ color: '#c4b5fd' }}>{actionLabel}</strong></div>
+            </div>
           </div>
         )}
 

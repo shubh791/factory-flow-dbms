@@ -1,0 +1,185 @@
+FactoryFlow DBMS — Examiner Q&A
+================================
+Simple answers for viva / presentation questions.
+
+
+Q: What is your project about?
+A: FactoryFlow is a factory management system with a database. It tracks employees,
+   production batches, product defects, and performance. Managers can add records,
+   view reports, and get AI-powered insights — all from one web app.
+
+
+Q: What problem does it solve?
+A: Most factories manage data in Excel sheets or on paper. This causes:
+   - No real-time visibility into production
+   - Manual calculation of efficiency and defects
+   - No history of promotions or role changes
+   - Slow decision-making due to scattered data
+   FactoryFlow puts everything in one central database with live dashboards.
+
+
+Q: What technology did you use?
+A: - Frontend: Next.js (React) — the web pages users see
+   - Backend: Next.js API routes — server code that talks to the database
+   - Database: PostgreSQL — stores all factory data permanently
+   - ORM: Prisma — converts JavaScript code into SQL queries automatically
+   - AI: Groq API (Llama model) — answers questions and performs CRUD via chat
+   - Charts: Apache ECharts — visualizes production trends and efficiency
+
+
+Q: What is an ORM? Why did you use Prisma?
+A: ORM = Object Relational Mapper. Instead of writing raw SQL like
+   "SELECT * FROM employees WHERE status='ACTIVE'", you write:
+   prisma.employee.findMany({ where: { status: 'ACTIVE' } })
+   Prisma converts this into proper SQL automatically. It also prevents
+   SQL injection attacks and makes the code easier to read and maintain.
+
+
+Q: What are the main database tables?
+A: - Employee: stores worker details (name, code, department, role, status)
+   - Production: each batch record (units made, defects, shift, date, product)
+   - Product: list of products manufactured
+   - Department: factory departments (Assembly, Quality, Packaging, etc.)
+   - Role: job roles with levels (Level 1 = entry, Level 5 = senior)
+   - PromotionHistory: every time an employee was promoted (old role → new role)
+
+
+Q: How are the tables related?
+A: - Each Production record belongs to one Employee and one Product
+   - Each Employee belongs to one Department and has one Role
+   - PromotionHistory links an Employee to their old and new Role
+   This is a relational database — data is linked by foreign keys (IDs).
+
+
+Q: What is unique about your project?
+A: Three things that make it stand out:
+   1. AI Chat with CRUD — users can type "update email of EMP001" and the AI
+      verifies the employee code in the database, confirms it found the record,
+      then executes the update automatically. No forms needed.
+   2. Real-time event bus — when any page adds or edits data, all other open
+      pages refresh instantly without any page reload. Like a live feed.
+   3. Smart CSV import — upload any CSV file from any source. The system
+      automatically detects column names using fuzzy matching, maps them to
+      the right database fields, and resolves unknown values before importing.
+
+
+Q: How does the AI work?
+A: When a user sends a message:
+   1. The server fetches live data from the database (employee list, production
+      stats, today's output) using 10 parallel queries.
+   2. This data + the user's message is sent to Groq AI (a fast LLM API).
+   3. The AI responds with an answer. If the user asked to do something
+      (add/update/delete), the AI includes a special action block in its reply.
+   4. The frontend detects this action block, shows a "Confirm & Execute" button.
+   5. User clicks confirm → the action runs against the real database → UI updates.
+
+
+Q: How does the AI verify an employee before updating?
+A: The AI is instructed (via the system prompt) to:
+   1. Extract the employee code from the user's message (e.g. EMP001).
+   2. Check that code against the employee list in the prompt.
+   3. If found → say "Found [Name], updating..." and generate the action.
+   4. If not found → say "No employee with that code exists."
+   5. If no code given → ask the user to provide it first.
+   This prevents the AI from updating the wrong person.
+
+
+Q: What is the real-time event bus?
+A: It is a simple publish/subscribe system built in lib/events.js.
+   - When the production page adds a record, it "emits" PRODUCTION_CHANGED.
+   - The dashboard is "listening" for that event.
+   - When it hears the event, it clears its cache and re-fetches data from the API.
+   - The dashboard KPIs update in under a second — no page refresh needed.
+   This is similar to how WhatsApp shows new messages without you refreshing.
+
+
+Q: What is the smart CSV import?
+A: Users can upload any CSV file (from Kaggle, Excel, etc.). The system:
+   1. Auto-detects if it's employee data or production data (scores each column header).
+   2. Uses fuzzy matching (Levenshtein distance algorithm) to match CSV columns
+      to database fields — e.g. "emp_name" → employee name field.
+   3. Shows unknown values (e.g. product names not in DB) and lets user decide:
+      map to existing, create new, or skip.
+   4. Creates any new records (products, departments) before inserting rows.
+   This means any CSV from any format can be imported without manual mapping.
+
+
+Q: What is fuzzy matching?
+A: Fuzzy matching means finding the closest match even if the text isn't exact.
+   Example: CSV has column "Emp_Code", database expects "employeeCode".
+   The algorithm calculates how many character edits it takes to go from one word
+   to another (Levenshtein distance). A score of 100 = exact match, 80+ = likely match.
+   This is the same technique used in spell-checkers and search engines.
+
+
+Q: How do you calculate efficiency?
+A: Efficiency = (Units Produced - Defects) / Units Produced × 100
+   Example: 1000 units made, 50 defective → (1000 - 50) / 1000 × 100 = 95% efficiency.
+   This is calculated in real time from the production table for each department,
+   product, and employee.
+
+
+Q: What is anomaly detection?
+A: The system checks the last 60 days of production data.
+   It calculates the average defect rate and standard deviation.
+   Any day where defects are more than 2 standard deviations above average
+   is flagged as an anomaly. The Groq AI also analyzes the pattern and
+   assigns a risk level: low / medium / high / critical.
+
+
+Q: How does role promotion work?
+A: Each role has a level number (1 = entry, 5 = senior).
+   To promote an employee, the new role must have a higher level than current.
+   The system creates a PromotionHistory record storing the old role and new role.
+   The employee's roleId is updated. The promotion appears in the PDF export report.
+
+
+Q: How do you generate the PDF report?
+A: The system uses Puppeteer (a headless Chrome browser) on the server.
+   It loads the report page, navigates slide by slide using Reveal.js,
+   takes a screenshot of each slide, then combines all screenshots into a PDF
+   using pdf-lib. This ensures charts and images render exactly as seen on screen.
+
+
+Q: What happens if the database has no data?
+A: Every page has a loading skeleton (animated placeholder) shown while fetching.
+   If there is no data, the page shows an empty state with a helpful message.
+   The AI also handles this — if asked about production with no records, it says
+   "No production records found" instead of making up numbers.
+
+
+Q: What security measures did you add?
+A: - Prisma ORM prevents SQL injection automatically.
+   - API routes validate all input before writing to the database.
+   - Employee delete cascades — deleting an employee also removes their
+     production records to avoid orphaned data.
+   - Soft delete (isDeleted flag) is used so data isn't permanently lost
+     until explicitly cleared.
+
+
+Q: What would you improve if you had more time?
+A: - User authentication (login/logout with roles — admin, manager, viewer)
+   - Mobile app version using React Native
+   - Email notifications when anomalies are detected
+   - More detailed financial analytics (cost per unit, margin per product)
+   - Scheduled AI reports sent automatically every week
+
+
+Q: How many records can the system handle?
+A: PostgreSQL can handle millions of records. The system is optimized with:
+   - Indexed foreign keys for fast joins
+   - Paginated API responses (the production table shows pages of 50 rows)
+   - Caching (data is reused for 5 minutes before re-fetching)
+   - Parallel queries (multiple DB queries run at the same time)
+
+
+Q: What is the difference between your project and a simple CRUD app?
+A: A basic CRUD app only creates, reads, updates, deletes data.
+   FactoryFlow adds:
+   - AI assistant that reads live data and executes actions via conversation
+   - Real-time event system that syncs all pages instantly
+   - Smart CSV importer with fuzzy matching and value reconciliation
+   - Analytics engine (efficiency, defect rates, anomaly detection)
+   - AI forecasting (predicts next month's production using historical trends)
+   - PDF report generation with charts rendered to image
+   These features make it a production-grade management system, not just a form app.

@@ -22,6 +22,7 @@
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.6",
     "framer-motion": "^12.34.3",
+    "fuse.js": "^7.1.0",
     "groq-sdk": "^0.37.0",
     "next": "^15.3.4",
     "pdfkit": "^0.17.2",
@@ -31,8 +32,10 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.24",
+    "pdf-lib": "^1.17.1",
     "postcss": "^8.5.6",
     "prisma": "^5.10.2",
+    "puppeteer-core": "^24.40.0",
     "tailwindcss": "3.4.1"
   }
 }
