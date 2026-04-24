@@ -66,6 +66,12 @@ export async function POST(request) {
     return NextResponse.json(employee);
   } catch (error) {
     console.error("Create Employee Error:", error);
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { error: "Employee creation failed because this employee code is already assigned to another employee. Please choose a different code." },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       { error: "Employee creation failed" },
       { status: 500 }

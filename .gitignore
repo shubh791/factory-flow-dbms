@@ -40,3 +40,13 @@ test_result.md
 
 # Portfolio zips
 public/*.zip
+
+# Documentation / presentation files
+*.txt
+*.pdf
+*.html
+*.pptx
+*.ppt
+
+# AI tooling
+.claude/

@@ -19,6 +19,7 @@ export default function EmployeesPage() {
 
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [formError, setFormError] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null); // { id, name }
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
   const [formData, setFormData] = useState({
@@ -66,7 +67,7 @@ export default function EmployeesPage() {
       fetchData();
       closeModal();
     } catch (error) {
-      alert(error.response?.data?.error || 'Operation failed');
+      setFormError(error.response?.data?.error || 'Operation failed');
     }
   };
 
@@ -103,6 +104,7 @@ export default function EmployeesPage() {
 
   const closeModal = () => {
     setShowModal(false);
+    setFormError(null);
     setFormData({
       id: null,
       name: '',
@@ -350,7 +352,7 @@ export default function EmployeesPage() {
                     type="text"
                     required
                     value={formData.employeeCode}
-                    onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
+                    onChange={(e) => { setFormData({ ...formData, employeeCode: e.target.value }); setFormError(null); }}
                     className="input-industrial"
                     placeholder="E.g., EMP001"
                   />
@@ -437,6 +439,18 @@ export default function EmployeesPage() {
                   </select>
                 </div>
               </div>
+
+              {formError && (
+                <div className="flex items-start justify-between gap-2 rounded-md px-3 py-2.5" style={{ background: 'var(--color-danger)15', border: '1px solid var(--color-danger)', color: 'var(--color-danger)' }}>
+                  <div className="flex items-center gap-2 text-sm">
+                    <FaExclamationTriangle size={13} className="shrink-0 mt-0.5" />
+                    <span>{formError}</span>
+                  </div>
+                  <button type="button" onClick={() => setFormError(null)} className="shrink-0 hover:opacity-70">
+                    <FaTimes size={13} />
+                  </button>
+                </div>
+              )}
 
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={closeModal} className="btn-industrial btn-secondary flex-1">

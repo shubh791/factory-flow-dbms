@@ -1,91 +1,128 @@
 # FactoryFlow DBMS
 
-**FactoryFlow** is a production-ready, real-time industrial DBMS analytics system with an integrated AI assistant. Built for factory managers and executives — live production analytics, workforce management, AI-powered forecasting, and intelligent decision support.
+A full-stack factory management system for tracking employees, production batches, defect rates, and performance analytics — with an AI-powered chat assistant and real-time dashboard.
 
 ---
 
 ## Features
 
-- **Real-Time Dashboard** — KPIs auto-refresh instantly after any CRUD operation anywhere in the app
-- **AI Assistant** — Powered by Groq (llama-3.3-70b-versatile); knows all live data; can answer questions, guide operations, and execute CRUD actions via chat
-- **Production Management** — Full CRUD with shift, defect, revenue, and profit tracking
-- **Workforce Management** — Employees, roles (hierarchy), promotions with full audit trail
-- **Decision Intelligence** — IPI score, AI production forecast, anomaly detection, executive Q&A
-- **PDF Export** — Multi-page report with real data + AI-generated insights
+- **Employee Management** — Add, update, promote, and soft-delete employees with full role/department assignment and promotion history tracking
+- **Production Tracking** — Log production batches with units, defects, shift, date, and assigned employee; view paginated records with filters
+- **Analytics Dashboard** — Live KPIs: efficiency %, defect rates, revenue, profit; per-department, per-product, and per-shift breakdowns with charts
+- **AI Chat Assistant** — Conversational interface powered by Groq LLM; answers analytics questions and executes CRUD actions (add/update/delete) via verified chat commands
+- **Anomaly Detection** — Flags days with statistically abnormal defect rates using standard deviation analysis
+- **Production Forecasting** — Predicts next month's output and defect rate from historical monthly trends
+- **Smart CSV Import** — Upload any CSV; system auto-detects data type, fuzzy-maps column headers to DB fields, and handles unknown values before import
+- **PDF Report Export** — Generates multi-slide performance reports with rendered charts using headless Chromium
+- **Real-time Event Bus** — All open pages update instantly when data changes — no page reload required
 
 ---
 
 ## Tech Stack
 
-| Layer     | Technology                        |
-|-----------|-----------------------------------|
-| Framework | Next.js 15 (App Router)           |
-| Database  | PostgreSQL                        |
-| ORM       | Prisma 5                          |
-| AI        | Groq API (llama-3.3-70b-versatile)|
-| PDF       | PDFKit                            |
-| Charts    | ECharts (echarts-for-react)       |
-| UI        | Tailwind CSS + Framer Motion      |
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 14 (App Router), React, Tailwind CSS |
+| Backend | Next.js API Routes (serverless) |
+| Database | PostgreSQL |
+| ORM | Prisma |
+| AI | Groq API (Llama models) |
+| Charts | Apache ECharts |
+| PDF | Puppeteer + pdf-lib |
+
+---
+
+## Database Schema
+
+- **Employee** — name, code, department, role, status, experience
+- **Department** — name, code
+- **Role** — title, level (1 = entry, higher = senior)
+- **Product** — name, unit price, unit cost
+- **Production** — units, defects, shift, date, employee, product, revenue, profit
+- **PromotionHistory** — employee, old role, new role, date, remarks
+- **AuditLog** — action, entity, actor, timestamp
 
 ---
 
 ## Setup
 
-### 1. Install dependencies
+### Prerequisites
+- Node.js 18+
+- PostgreSQL database
+- Groq API key (free at [console.groq.com](https://console.groq.com))
+
+### Installation
+
 ```bash
+# Install dependencies
 npm install
-```
 
-### 2. Configure environment
-Create `.env`:
-```
-DATABASE_URL="postgresql://user:password@localhost:5432/factoryflow"
-GROQ_API_KEY="your_groq_api_key"
-```
+# Set up environment variables
+cp .env.example .env
+# Edit .env and fill in DATABASE_URL and GROQ_API_KEY
 
-### 3. Initialize database
-```bash
-npx prisma generate
-npx prisma migrate dev --name init
+# Run database migrations
+npx prisma migrate dev
+
+# Seed initial data (optional)
 npx prisma db seed
-```
 
-### 4. Run
-```bash
+# Start development server
 npm run dev
-# Open http://localhost:3000
 ```
 
----
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## How the AI Works
+### Environment Variables
 
-1. **Every chat message** triggers a parallel fetch of 10+ live DB queries (employee counts, today's units, top producers, product defect rates, etc.)
-2. **All data is injected** into a detailed system prompt so the AI has full factory context
-3. **Streaming responses** are delivered token-by-token for real-time feel
-4. **Action blocks** — when the AI suggests a CRUD operation, it returns a structured JSON block; the UI renders an interactive card; clicking Execute calls `/api/ai/action` and emits real-time events across all pages
-5. **Event bus** (`lib/events.js`) propagates data changes instantly without page reload
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/factoryflow"
+GROQ_API_KEY="your_groq_api_key_here"
+```
 
 ---
 
 ## Project Structure
 
 ```
-app/                  Next.js pages + API routes
-  api/ai/             AI endpoints (chat, action, forecast, anomaly)
-  api/analytics/      KPI aggregations
-  api/employees/      Employee CRUD
-  api/production/     Production CRUD
-  api/reports/        PDF generation
-components/
-  ai/                 AskAIChat, FloatingChat, AIInsightPanel
-  charts/             Production + Efficiency ECharts
-  layout/             Shell, Sidebar, Navbar
-lib/
-  events.js           Real-time event bus
-  hooks/              useFactoryData (cached), useAIInsights
-  prompts/            AI prompt builders
-prisma/
-  schema.prisma       DB schema
-  seed.js             Sample data
+factory-flow-dbms/
+├── app/                    # Next.js App Router pages and API routes
+│   ├── api/                # Backend API endpoints
+│   │   ├── ai/             # AI chat and analytics endpoints
+│   │   ├── employees/      # Employee CRUD
+│   │   ├── production/     # Production CRUD
+│   │   └── ...
+│   ├── dashboard/          # Main dashboard page
+│   ├── employees/          # Employee management page
+│   ├── production/         # Production records page
+│   ├── analytics/          # Analytics and charts page
+│   └── dataset-upload/     # CSV import page
+├── components/             # Reusable React components
+│   ├── ai/                 # AI chat widget
+│   ├── charts/             # ECharts wrappers
+│   └── ui/                 # Shared UI components
+├── lib/                    # Utility modules
+│   ├── prisma.js           # Prisma client singleton
+│   ├── events.js           # Real-time event bus
+│   ├── prompts/            # AI prompt builders
+│   └── hooks/              # React data hooks
+└── prisma/
+    └── schema.prisma       # Database schema
 ```
+
+---
+
+## How the AI Assistant Works
+
+1. User sends a message in the chat widget
+2. Server fetches live data from the database (employees, production stats, recent records) via parallel queries
+3. This data + the user's message is sent to Groq API
+4. If the user requested a data change, the AI includes a structured action block in its response
+5. The frontend detects the action block and shows a **Confirm & Execute** button
+6. On confirmation, the action runs against the database and the UI updates in real time
+
+---
+
+## License
+
+MIT
